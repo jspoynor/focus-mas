@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@plugin "liquidglass-tailwind";
+
+@layer base {
+  body {
+    @apply min-h-svh bg-slate-950 text-slate-100 antialiased;
+  }
+}
