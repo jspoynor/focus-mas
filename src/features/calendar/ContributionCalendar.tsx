@@ -11,6 +11,7 @@ import {
   formatProjectedDateLabel,
   projectedDateKey,
 } from '../../lib/projectedDate'
+import { MasteryDetails, MasteryStage } from '../mastery/MasteryInsights'
 import { useAppStore } from '../../store/useAppStore'
 import { CalendarDayCell } from './CalendarDayCell'
 
@@ -131,9 +132,11 @@ export function ContributionCalendar() {
       className="glass-panel min-h-0 min-w-0 overflow-hidden rounded-glass-lg p-6 max-lg:min-h-0 max-lg:flex-[1.5]"
       aria-label="Contribution calendar"
     >
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+        <MasteryStage />
+
         {calendar.projectedLabel ? (
-          <p className="mb-3 shrink-0 text-xs leading-relaxed text-white/60">
+          <p className="shrink-0 text-[10px] leading-relaxed text-white/50">
             {calendar.projectedLabel}
           </p>
         ) : null}
@@ -197,6 +200,8 @@ export function ContributionCalendar() {
             <div ref={bottomSentinelRef} className="h-px shrink-0" aria-hidden="true" />
           </div>
         </div>
+
+        <MasteryDetails />
       </div>
     </section>
   )

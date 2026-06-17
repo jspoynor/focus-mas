@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { AppLayout } from './components/AppLayout'
 import { CursorLight } from './components/CursorLight'
 import { AuthLoadingScreen } from './components/AuthLoadingScreen'
@@ -6,8 +7,16 @@ import { LeftPanel } from './components/LeftPanel'
 import { SignInScreen } from './components/SignInScreen'
 import { ContributionCalendar } from './features/calendar/ContributionCalendar'
 import { CenterColumn } from './features/session/CenterColumn'
+import { usePathname } from './hooks/usePathname'
 import { useWallpaperCycle } from './hooks/useWallpaperCycle'
+import { isDevToolsEnabled } from './dev/isDevToolsEnabled'
 import { useAppStore } from './store/useAppStore'
+
+const DevAdminShell = import.meta.env.DEV
+  ? lazy(() =>
+      import('./dev/DevAdminShell').then((m) => ({ default: m.DevAdminShell })),
+    )
+  : null
 
 function MainShell({ onCycleWallpaper }: { onCycleWallpaper: () => void }) {
   const userDataStatus = useAppStore((s) => s.userDataStatus)
@@ -29,7 +38,7 @@ function MainShell({ onCycleWallpaper }: { onCycleWallpaper: () => void }) {
   )
 }
 
-function App() {
+function MainApp() {
   const authStatus = useAppStore((s) => s.authStatus)
   const { cycle } = useWallpaperCycle()
 
@@ -45,6 +54,20 @@ function App() {
       )}
     </>
   )
+}
+
+function App() {
+  const pathname = usePathname()
+
+  if (isDevToolsEnabled() && pathname === '/admin' && DevAdminShell) {
+    return (
+      <Suspense fallback={<AuthLoadingScreen />}>
+        <DevAdminShell />
+      </Suspense>
+    )
+  }
+
+  return <MainApp />
 }
 
 export default App

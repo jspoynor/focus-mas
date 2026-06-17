@@ -1,147 +1,142 @@
-# Focus Mastery — Build Roadmap
+# Focus Mastery — Admin Panel Roadmap
 
-Each phase is a vertical slice: shippable, testable, and builds directly on the previous phase. No phase introduces speculative abstractions.
+Dev-only tooling so product flows can be tested without waiting 25 minutes per session or hand-grinding 300 minutes of history. Each phase is a vertical slice: shippable, testable, and builds on the previous phase.
 
----
+**Design decisions (locked):**
 
-## Phase 1 — Auth + shell
-Status: [x] Done
-
-**Goal:** A signed-in user sees the three-column glass layout with placeholder panels. Nothing functional yet, but the skeleton is permanent.
-
-**Deliverables:**
-- Firebase Auth wired up (Google sign-in)
-- Sign-in screen: app name, description copy, "Sign in with Google" button
-- Three-column layout locked in: left glass panel, center column, right glass panel
-- Nature photo wallpaper background
-- Liquid glass styling applied to all three panels
-- Zustand auth state (`authStatus`, `userId`, `displayName`) connected to Firebase Auth listener
-- Route guard: unauthenticated → sign-in screen, authenticated → main layout
-
-**Dependencies:** Firebase project configured, `.env.local` populated.
-
----
-
-## Phase 2 — Timer
-Status: [x] Done
-
-**Goal:** A working Pomodoro timer that runs focus sessions and break countdowns at the user's current stage, plays an audio cue on completion, and persists completed sessions to Firestore.
-
-**Deliverables:**
-- Timer UI in center column: large countdown display, start/stop controls
-- Focus session runs at `progress.currentStageMinutes` (default 25 min on first load)
-- Break timer runs automatically after a completed session: `round(focusDuration × 0.2)` to nearest 5 min
-- Early stop discards session — no Firestore write
-- Timer-to-zero triggers audio cue (browser Audio API)
-- Completed session written to `users/{userId}/sessions/{sessionId}` with all fields except survey answers (written as `null` until survey completes — survey write is in Phase 3)
-- `activeSessionId` in Zustand set on start, cleared on stop/complete
-- PWA offline: timer runs client-side, Firestore write queues if offline, syncs on reconnect
-- "Syncing..." indicator shown if reconnecting after >24 hours offline
-
-**Dependencies:** Phase 1 complete, Firestore rules allowing user-scoped writes.
+| Decision | Choice |
+|----------|--------|
+| Hosting | Dev-only, local (`npm run dev`) — never ships in production |
+| Surface area | Inline dev toolbar on main app **and** `/admin` page (toolbar first) |
+| Timer shortcuts | Instant complete + short-duration mode |
+| Survey / break | Quick-submit Clean / Distracted + skip break |
+| `/admin` scope | Reset, progress editor, session seeder, scenario presets |
+| Gating | `import.meta.env.DEV` **and** `VITE_DEV_TOOLS=true` in `.env.local` |
+| Data target | Same Google account, same Firestore project (real data) |
+| Preset behavior | Reset-then-seed (predictable state every time) |
+| Toolbar UX | `` ` `` keyboard toggle → floating panel (bottom-right) |
+| Confirmations | Single-click modal with action summary (session count, fields changed) |
+| Short duration | Configurable in toolbar; default **10 seconds** |
+| Scenario presets (v1) | Cold start, Almost advancing, Below threshold, Step-back ready, Calendar month |
 
 ---
 
-## Phase 3 — Post-session survey
+## Phase 1 — Dev gate + routing shell
 Status: [x] Done
 
-**Goal:** After every completed focus session, the survey animates into the center column and captures distraction answers. Session document is updated in Firestore. Mastery engine runs.
+**Goal:** Dev tools are opt-in, stripped from production builds, and `/admin` is reachable in dev without touching product UI yet.
 
 **Deliverables:**
-- Survey slides up from bottom of center column when timer hits zero; timer shrinks upward to make room
-- Two yes/no questions rendered as buttons
-- On submit: `q1Distracted`, `q2UsedPhone`, `distracted` written to the session document
-- Survey cannot be skipped (no dismiss button — must answer to proceed)
-- After submit: survey animates away, break timer starts
-- Mastery engine runs after each survey submission (see Phase 4 — engine can be a stub that logs output for now)
+- `VITE_DEV_TOOLS` env flag documented in `.env.example`; dev tools inactive unless `import.meta.env.DEV && import.meta.env.VITE_DEV_TOOLS === 'true'`
+- `src/dev/isDevToolsEnabled.ts` — single gate used by all dev code
+- Lightweight routing in `App.tsx` (pathname check or minimal router): `/admin` renders admin shell; all other paths unchanged
+- Admin route + all `src/dev/**` imports wrapped so Vite tree-shakes them from `npm run build` output
+- `/admin` placeholder page: "Dev tools" heading, signed-in UID display, link back to main app
+- Main app unchanged when `VITE_DEV_TOOLS` is unset or false
 
-**Dependencies:** Phase 2 complete (session document exists before survey writes to it).
+**Dependencies:** Existing auth + Firebase client.
 
 ---
 
-## Phase 4 — Mastery engine + progress document
-Status: [x] Done
+## Phase 2 — Inline dev toolbar
+Status: [ ] Not started
 
-**Goal:** After each survey submission, the mastery engine computes the rolling window, checks for advancement, updates the progress document, and fires the step-back offer when appropriate.
+**Goal:** Toggle a floating dev panel on the main three-column layout and shortcut the timer → survey → break loop without leaving the real UI.
 
 **Deliverables:**
-- `users/{userId}/progress` document created on first sign-in (default: `currentStageMinutes: 25`, all other fields null)
-- Rolling window logic: fetch sessions ordered by `completedAt DESC`, accumulate `durationMinutes` until sum > 300, compute `cleanRate`
-- Cold start: if accumulated time < 300 min, mastery shows "Building..." with a progress bar (% of 300 min filled)
-- Advancement check: if `cleanRate >= 0.80` and window is full → increment `currentStageMinutes` by 5, update `lastProgressionAt`
-- Step-back offer: if `newMasteryPercent < prevMasteryPercent AND newMasteryPercent < 0.50` → show in-page prompt offering to decrement stage; user accepts or declines; no forced change
-- `prevMasteryPercent` updated on `progress` document after every session
-- Timer reads `currentStageMinutes` from progress document on each new session start
+- `` ` `` keyboard listener (dev-only) toggles floating panel; panel hidden by default
+- Floating panel (bottom-right): collapsible, unobtrusive, does not affect three-column layout
+- **Complete now** — ends active focus session via real completion path (`handleFocusComplete` → Firestore write → survey)
+- **Short duration mode** — toggle + seconds input (default 10); overrides focus duration for next session start only; reads real `currentStageMinutes` when off
+- **Clean** / **Distracted** — visible while survey is open; submits real survey answers through existing `updateSessionSurvey` + `runMasteryEngineAfterSession`
+- **Skip break** — visible while break timer runs; returns to idle without waiting
+- Toolbar actions that mutate nothing (complete, skip break, survey submit) require no confirm dialog
+- Timer exposes dev hooks via ref/callback/context — no duplicate Firestore write paths
 
-**Dependencies:** Phase 3 complete (survey answers present on session documents).
+**Dependencies:** Phase 1 complete.
 
 ---
 
-## Phase 5 — Contribution calendar
-Status: [x] Done
+## Phase 3 — `/admin` reset + progress editor
+Status: [ ] Not started
 
-**Goal:** The right panel shows a GitHub-style contribution calendar with belt-color squares, today/projected-date markers, and per-day session history tooltips.
+**Goal:** Full account wipe and manual progress editing from `/admin`, with clear summaries before destructive actions.
 
 **Deliverables:**
-- Calendar grid rendered in right panel: one cell per day, current month + trailing history
-- Cell fill color: 13-step summer belt ladder based on `cleanSessions / completedSessions` for that day (empty cell if no sessions)
-- Today marker: solid red circle (Notion-style), hover tooltip "Today"
-- Projected advancement date marker: white circle, hover tooltip "If all upcoming sessions are clean, you could advance by [date]"
-- Projected date math: assume future sessions all clean, calculate `cleanNeeded`, estimate from `avgSessionsPerDay`; label as conditional target
-- Projected date label: *"If all upcoming sessions are clean, you could advance by [date]."* (shown below or above calendar)
-- Session history tooltip on hover: list of that day's completed sessions with duration, Q1 answer, Q2 answer
-- Calendar updates reactively after each survey submission
+- **Reset account** button: deletes all `users/{uid}/sessions/*`, resets `users/{uid}/progress` to defaults (`currentStageMinutes: 25`, nulls on optional fields)
+- Single-click confirm modal shows: session count to delete, progress fields to reset
+- After reset, Zustand store refreshes (re-fetch sessions + progress or trigger existing sync hook)
+- **Progress editor** form for `currentStageMinutes`, `prevMasteryPercent`, `lastProgressionAt`, `stepBackOfferedAt` — save writes to Firestore via existing `saveUserProgress`
+- Read-only summary: current rolling window stats (total min, clean rate, is full) computed from live session data
+- Link from `/admin` to main app; dev toolbar still available on main app
 
-**Belt color hex values (summer palette):**
-
-| Step | Band | Color name | Hex |
-|------|------|------------|-----|
-| 1 | 0–8% | Cream | `#FFF8E7` |
-| 2 | 8–15% | Pale gold | `#FFE680` |
-| 3 | 15–23% | Sunny yellow | `#FFD700` |
-| 4 | 23–31% | Amber | `#FFA500` |
-| 5 | 31–38% | Warm orange | `#FF6B35` |
-| 6 | 38–46% | Chartreuse | `#A8D400` |
-| 7 | 46–54% | Fresh green | `#4CAF50` |
-| 8 | 54–62% | Teal | `#26A69A` |
-| 9 | 62–69% | Sky blue | `#29B6F6` |
-| 10 | 69–77% | Indigo | `#5C6BC0` |
-| 11 | 77–85% | Warm purple | `#AB47BC` |
-| 12 | 85–92% | Rich brown | `#8D5524` |
-| 13 | 92–100% | Deep espresso | `#2C1503` |
-
-**Dependencies:** Phase 4 complete (progress document and session data fully populated).
+**Dependencies:** Phase 1 complete. Can ship in parallel with Phase 2 but listed after Phase 2 in build order.
 
 ---
 
-## Phase 6 — Polish + PWA hardening
-Status: [x] Done
+## Phase 4 — Session seeder + scenario presets
+Status: [ ] Not started
 
-**Goal:** App is installable, feels complete, and handles all edge cases gracefully.
+**Goal:** One-click predictable test states. Every preset resets first, then seeds — no partial/ambiguous window math.
 
 **Deliverables:**
-- PWA manifest: app name, icons, display standalone
-- Service worker via vite-plugin-pwa: cache shell + assets for offline load
-- "Syncing..." indicator fully wired (offline gap > 24 hours)
-- Audio cue asset finalized (clean tone, not jarring)
-- Responsive layout: three-column on desktop, graceful stack on narrow viewports
-- Firestore security rules: users can only read/write their own documents
-- Loading states: skeleton screens while Firestore data loads on sign-in
-- All hover tooltips (calendar markers, session history) accessible via keyboard/focus
+- `src/dev/seedSessions.ts` — creates completed session documents with correct fields (`durationMinutes`, `completedAt`, `q1Distracted`, `q2UsedPhone`, `distracted`, `startedAt`)
+- Generic seeder controls: session count, duration, clean/distracted ratio, spread across N days (for manual experiments)
+- Preset buttons (each runs reset-then-seed with single-click confirm showing exact plan):
 
-**Dependencies:** Phases 1–5 complete.
+| Preset | After reset, seeds… |
+|--------|---------------------|
+| **Cold start** | Nothing — default progress only |
+| **Almost advancing** | 12 × 25 min clean (full 300 min window, 100% clean); next session should advance to 30 min |
+| **Below threshold** | Full 300 min window at ~70% clean; tests projected date, no advancement |
+| **Step-back ready** | Stage 35 min, `prevMasteryPercent: 0.55`, window ~45% clean; next distracted session triggers step-back offer |
+| **Calendar month** | ~30 days of mixed clean/distracted sessions for belt colors and day tooltips |
+
+- `completedAt` timestamps backdated realistically (spread across days for calendar preset)
+- After seed, re-run mastery engine or refresh store so left panel + calendar reflect new state immediately
+
+**Dependencies:** Phase 3 complete (reset logic reused by presets).
+
+---
+
+## Phase 5 — Polish + safety pass
+Status: [ ] Not started
+
+**Goal:** Dev tooling feels reliable during daily use on real data; edge cases handled.
+
+**Deliverables:**
+- Confirm modals always show live counts ("Delete **N** of your sessions…") — never hardcoded
+- Disable dev actions while Firestore writes in flight; show loading on preset buttons
+- Dev toolbar: indicate short-duration mode active (visual badge)
+- Dev toolbar: disable "Complete now" when no active focus session; disable survey buttons when survey not visible
+- `/admin` accessible only when signed in (redirect to sign-in or show message)
+- README section: how to enable dev tools, toolbar shortcuts, preset descriptions, warning about real data
+- Verify `npm run build` output contains no dev route strings or admin bundle (spot-check dist/)
+
+**Dependencies:** Phases 1–4 complete.
 
 ---
 
 ## Dependency order
 
 ```
-Phase 1 (Auth + shell)
-    └── Phase 2 (Timer)
-            └── Phase 3 (Survey)
-                    └── Phase 4 (Mastery engine)
-                            └── Phase 5 (Calendar)
-                                    └── Phase 6 (Polish)
+Phase 1 (Dev gate + routing)
+    ├── Phase 2 (Inline dev toolbar)     ← build first for daily use
+    └── Phase 3 (Reset + progress editor)
+            └── Phase 4 (Seeder + presets)
+                    └── Phase 5 (Polish)
 ```
 
-Each phase is strictly sequential — no parallelism needed at this scale.
+Phase 2 and Phase 3 can be built in parallel after Phase 1; Phase 2 is prioritized because it unblocks timer/survey/break flow testing immediately.
+
+---
+
+## Out of scope (v1)
+
+- Production-accessible admin (secret URL, deployed dev tools)
+- Separate Firebase dev project / emulator
+- Cross-user or multi-tenant admin
+- Speed multiplier on running timer
+- Additive-only presets (merge with existing sessions)
+- Typed `RESET` confirm (single-click chosen; revisit if misclicks become a problem)
+- Scenario presets: Partial window, Mid ladder (deferred — covered by inline toolbar + progress editor)

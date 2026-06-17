@@ -1,7 +1,9 @@
+import { MIN_STAGE_MINUTES, STAGE_INCREMENT } from './mastery'
+
 /** 13-step summer belt ladder — upper bounds for each band (exclusive except last). */
 const BELT_BANDS = [0.08, 0.15, 0.23, 0.31, 0.38, 0.46, 0.54, 0.62, 0.69, 0.77, 0.85, 0.92, 1.01] as const
 
-const BELT_HEX = [
+export const BELT_HEX = [
   '#FFF8E7', // 0–8% cream
   '#FFE680', // 8–15%
   '#FFD700', // 15–23%
@@ -19,6 +21,12 @@ const BELT_HEX = [
 
 /** Warm orange belt step — today marker on the contribution calendar. */
 export const TODAY_MARKER_COLOR = '#FF6B35'
+
+export function getStageColor(stageMinutes: number): string {
+  const stageIndex = Math.round((stageMinutes - MIN_STAGE_MINUTES) / STAGE_INCREMENT)
+  const colorIndex = Math.min(Math.max(stageIndex, 0), BELT_HEX.length - 1)
+  return BELT_HEX[colorIndex]
+}
 
 export function getBeltColor(cleanRate: number): string {
   for (let i = 0; i < BELT_BANDS.length; i++) {
