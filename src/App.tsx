@@ -1,21 +1,47 @@
 import { AppLayout } from './components/AppLayout'
+import { CursorLight } from './components/CursorLight'
+import { AuthLoadingScreen } from './components/AuthLoadingScreen'
+import { DataLoadingSkeleton } from './components/DataLoadingSkeleton'
+import { LeftPanel } from './components/LeftPanel'
+import { SignInScreen } from './components/SignInScreen'
 import { ContributionCalendar } from './features/calendar/ContributionCalendar'
-import { MasteryEnginePlaceholder } from './features/mastery/MasteryEnginePlaceholder'
-import { PostSessionSurvey } from './features/survey/PostSessionSurvey'
-import { Timer } from './features/timer/Timer'
+import { CenterColumn } from './features/session/CenterColumn'
+import { useAppStore } from './store/useAppStore'
 
-function App() {
+function MainShell() {
+  const userDataStatus = useAppStore((s) => s.userDataStatus)
+
   return (
     <AppLayout>
-      <MasteryEnginePlaceholder />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Timer />
-        <PostSessionSurvey />
-      </div>
-      <div className="mt-6">
-        <ContributionCalendar />
-      </div>
+      {userDataStatus === 'loading' ? (
+        <DataLoadingSkeleton />
+      ) : (
+        <div className="flex min-h-0 w-full flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden lg:grid lg:grid-cols-[minmax(0,0.48fr)_minmax(0,2.24fr)_minmax(0,0.48fr)] lg:items-center lg:gap-6 lg:overflow-hidden">
+          <LeftPanel />
+          <div className="flex min-h-0 min-w-0 shrink-0 flex-col justify-center overflow-y-auto overflow-x-hidden lg:min-h-0 lg:shrink">
+            <CenterColumn />
+          </div>
+          <ContributionCalendar />
+        </div>
+      )}
     </AppLayout>
+  )
+}
+
+function App() {
+  const authStatus = useAppStore((s) => s.authStatus)
+
+  return (
+    <>
+      <CursorLight />
+      {authStatus === 'unknown' ? (
+        <AuthLoadingScreen />
+      ) : authStatus === 'signed-out' ? (
+        <SignInScreen />
+      ) : (
+        <MainShell />
+      )}
+    </>
   )
 }
 

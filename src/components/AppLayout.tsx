@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { signOut } from '../lib/auth'
 import { useAppStore } from '../store/useAppStore'
 
 interface AppLayoutProps {
@@ -6,30 +7,32 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const authStatus = useAppStore((s) => s.authStatus)
   const displayName = useAppStore((s) => s.displayName)
 
+  async function handleSignOut() {
+    await signOut()
+  }
+
   return (
-    <div className="min-h-svh">
-      <header className="glass-nav sticky top-0 z-10 flex items-center justify-between px-6 py-4">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-white/50">
-            Focus Mastery
-          </p>
-          <h1 className="text-xl font-semibold text-white">Train your attention</h1>
-        </div>
-        <div className="text-right text-sm text-white/70">
-          {authStatus === 'signed-in' && displayName ? (
-            <span>{displayName}</span>
-          ) : (
-            <span>
-              {/* TODO(grill-me): Google sign-in via Firebase Auth */}
-              Sign in (stub)
-            </span>
-          )}
+    <div className="app-shell flex h-svh flex-col overflow-hidden">
+      <header className="z-10 flex shrink-0 items-center justify-between bg-transparent px-6 py-3">
+        <p className="text-xs uppercase tracking-widest text-white/50">Focus Mastery</p>
+        <div className="flex items-center gap-4">
+          {displayName ? (
+            <span className="text-xs tracking-widest text-white/50">{displayName}</span>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="text-xs uppercase tracking-widest text-white/50 transition-opacity hover:text-white/80"
+          >
+            Sign out
+          </button>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+      <main className="flex min-h-0 w-full flex-1 flex-col justify-center overflow-hidden px-4 py-4 sm:px-6 lg:px-8 lg:py-0">
+        {children}
+      </main>
     </div>
   )
 }

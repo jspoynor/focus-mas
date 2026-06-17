@@ -2,27 +2,32 @@ import { create } from 'zustand'
 import type { FocusSession, UserProgress } from '../types'
 
 export type AuthStatus = 'unknown' | 'signed-out' | 'signed-in'
+export type UserDataStatus = 'idle' | 'loading' | 'ready'
 
 export interface AppState {
   authStatus: AuthStatus
   userId: string | null
   displayName: string | null
+  userDataStatus: UserDataStatus
   progress: UserProgress | null
   sessions: FocusSession[]
   /** Active focus session id while timer is running; null when idle. */
   activeSessionId: string | null
+  /** Target stage minutes when a step-back offer is active; null otherwise. */
+  pendingStepBackTargetMinutes: number | null
 }
 
 export interface AppActions {
-  // TODO(grill-me): wire Firebase auth listeners and Firestore sync.
   setAuth: (payload: {
     status: AuthStatus
     userId: string | null
     displayName: string | null
   }) => void
+  setUserDataStatus: (status: UserDataStatus) => void
   setProgress: (progress: UserProgress | null) => void
   setSessions: (sessions: FocusSession[]) => void
   setActiveSessionId: (sessionId: string | null) => void
+  setPendingStepBackTargetMinutes: (minutes: number | null) => void
 }
 
 export type AppStore = AppState & AppActions
@@ -31,16 +36,21 @@ const initialState: AppState = {
   authStatus: 'unknown',
   userId: null,
   displayName: null,
+  userDataStatus: 'idle',
   progress: null,
   sessions: [],
   activeSessionId: null,
+  pendingStepBackTargetMinutes: null,
 }
 
 export const useAppStore = create<AppStore>((set) => ({
   ...initialState,
   setAuth: ({ status, userId, displayName }) =>
     set({ authStatus: status, userId, displayName }),
+  setUserDataStatus: (userDataStatus) => set({ userDataStatus }),
   setProgress: (progress) => set({ progress }),
   setSessions: (sessions) => set({ sessions }),
   setActiveSessionId: (activeSessionId) => set({ activeSessionId }),
+  setPendingStepBackTargetMinutes: (pendingStepBackTargetMinutes) =>
+    set({ pendingStepBackTargetMinutes }),
 }))
