@@ -4,9 +4,10 @@ import { useAppStore } from '../store/useAppStore'
 
 interface AppLayoutProps {
   children: ReactNode
+  onCycleWallpaper?: () => void
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children, onCycleWallpaper }: AppLayoutProps) {
   const displayName = useAppStore((s) => s.displayName)
 
   async function handleSignOut() {
@@ -20,6 +21,17 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div className="flex items-center gap-4">
           {displayName ? (
             <span className="text-xs tracking-widest text-white/50">{displayName}</span>
+          ) : null}
+          {onCycleWallpaper ? (
+            <button
+              type="button"
+              onClick={onCycleWallpaper}
+              className="rounded-glass px-3 py-1.5 text-xs uppercase tracking-widest text-white/40 transition-colors hover:text-white/70"
+              aria-label="Cycle wallpaper"
+              title="Cycle wallpaper"
+            >
+              Cycle
+            </button>
           ) : null}
           <button
             type="button"

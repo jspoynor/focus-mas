@@ -10,7 +10,14 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icon.svg', 'wallpaper.jpg'],
+      includeAssets: [
+        'favicon.svg',
+        'icon.svg',
+        'wallpaper.jpg',
+        'wallpaper-1.jpg',
+        'wallpaper-2.jpg',
+        'wallpaper-3.jpg',
+      ],
       manifest: {
         name: 'Focus Mastery',
         short_name: 'Focus',

@@ -31,7 +31,7 @@
 
   position: relative;
   isolation: isolate;
-  background-image: url('/wallpaper.jpg');
+  background-image: var(--app-wallpaper);
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
@@ -72,8 +72,14 @@
 }
 
 .calendar-scroll {
+  width: calc(100% + 1rem);
+  margin-right: -1rem;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.calendar-scroll-inner {
+  width: calc(100% - 1rem);
 }
 
 .calendar-scroll::-webkit-scrollbar {
@@ -98,47 +104,36 @@
 }
 
 @layer components {
-  /* ~30% more transparent + stronger Apple-like refraction */
-  .glass-card {
-    background-color: rgba(255, 255, 255, 0.105);
-    backdrop-filter: blur(24px) saturate(220%) brightness(1.05);
-    -webkit-backdrop-filter: blur(24px) saturate(220%) brightness(1.05);
-    border-color: rgba(255, 255, 255, 0.14);
-    box-shadow:
-      0 8px 32px rgba(31, 38, 135, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  .glass-shine::after {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.34) 0%,
+      rgba(255, 255, 255, 0.08) 18%,
+      transparent 42%,
+      transparent 58%,
+      rgba(255, 255, 255, 0.06) 82%,
+      rgba(255, 255, 255, 0.12) 100%
+    );
   }
+}
 
-  .glass-card-elevated {
-    background-color: rgba(255, 255, 255, 0.175);
-    backdrop-filter: blur(32px) saturate(240%) brightness(1.06);
-    -webkit-backdrop-filter: blur(32px) saturate(240%) brightness(1.06);
-    border-color: rgba(255, 255, 255, 0.21);
-    box-shadow:
-      0 16px 48px rgba(31, 38, 135, 0.18),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-  }
-
-  .glass-nav {
-    background-color: rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(28px) saturate(220%) brightness(1.04);
-    -webkit-backdrop-filter: blur(28px) saturate(220%) brightness(1.04);
-    border-bottom-color: rgba(255, 255, 255, 0.07);
-  }
-
-  .glass-btn,
-  .glass-btn-secondary,
-  .glass-btn-pill {
-    background-color: rgba(255, 255, 255, 0.105);
-    backdrop-filter: blur(20px) saturate(200%);
-    -webkit-backdrop-filter: blur(20px) saturate(200%);
-    border-color: rgba(255, 255, 255, 0.12);
-  }
-
-  .glass-btn-secondary {
-    background-color: rgba(255, 255, 255, 0.056);
-  }
+/* Shared subtle glass surface (matches left/right panels) */
+.glass-surface,
+.glass-panel,
+.glass-surface,
+.glass-card,
+.glass-card-elevated,
+.glass-nav,
+.glass-btn,
+.glass-btn-secondary,
+.glass-btn-pill,
+.glass-btn-oval,
+.ui-surface {
+  background-color: var(--glass-subtle-tint);
+  backdrop-filter: var(--glass-subtle-blur);
+  -webkit-backdrop-filter: var(--glass-subtle-blur);
+  border: 1px solid var(--glass-subtle-border);
+  box-shadow: var(--glass-subtle-shadow), inset 0 1px 0 var(--glass-subtle-highlight);
 }
 
 /* Outside @layer so panel glass wins over liquidglass-tailwind utilities */
@@ -148,11 +143,6 @@
   max-height: var(--sidebar-height);
   min-height: 0;
   flex-direction: column;
-  background-color: var(--glass-subtle-tint);
-  backdrop-filter: var(--glass-subtle-blur);
-  -webkit-backdrop-filter: var(--glass-subtle-blur);
-  border: 1px solid var(--glass-subtle-border);
-  box-shadow: var(--glass-subtle-shadow), inset 0 1px 0 var(--glass-subtle-highlight);
 }
 
 .glass-btn-oval {
@@ -161,21 +151,40 @@
   justify-content: center;
   border-radius: 9999px;
   padding: 0.5rem 2.75rem;
-  background-color: var(--glass-subtle-tint);
-  backdrop-filter: var(--glass-subtle-blur);
-  -webkit-backdrop-filter: var(--glass-subtle-blur);
-  border: 1px solid var(--glass-subtle-border);
-  box-shadow: var(--glass-subtle-shadow), inset 0 1px 0 var(--glass-subtle-highlight);
   transition: opacity 150ms ease;
-}
-
-.glass-btn-oval:hover:not(:disabled) {
-  opacity: 0.9;
 }
 
 .glass-btn-oval:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+/* Override liquidglass-tailwind hover lift / active scale on buttons */
+.glass-btn,
+.glass-btn-secondary,
+.glass-btn-pill,
+.glass-btn-oval {
+  transition: opacity 150ms ease;
+}
+
+.glass-btn:hover,
+.glass-btn-secondary:hover,
+.glass-btn-pill:hover,
+.glass-btn-oval:hover:not(:disabled) {
+  transform: none;
+  background-color: var(--glass-subtle-tint);
+  box-shadow: var(--glass-subtle-shadow), inset 0 1px 0 var(--glass-subtle-highlight);
+}
+
+.glass-btn:active,
+.glass-btn-secondary:active,
+.glass-btn-pill:active,
+.glass-btn-oval:active:not(:disabled) {
+  transform: none;
+}
+
+.glass-btn-oval:hover:not(:disabled) {
+  opacity: 0.9;
 }
 
 @media (max-width: 1023px) {
@@ -186,8 +195,16 @@
 }
 
 @media (prefers-reduced-transparency: reduce) {
+  .glass-surface,
   .glass-panel,
-  .glass-btn-oval {
+  .glass-card,
+  .glass-card-elevated,
+  .glass-nav,
+  .glass-btn,
+  .glass-btn-secondary,
+  .glass-btn-pill,
+  .glass-btn-oval,
+  .ui-surface {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     background-color: rgba(55, 55, 60, 0.9);
@@ -195,6 +212,7 @@
 }
 
 :root {
+  --app-wallpaper: url('/wallpaper.jpg');
   --cursor-x: 50vw;
   --cursor-y: 50vh;
   --cursor-light-radius: 28rem;
@@ -207,6 +225,7 @@
 }
 
 .glass-panel,
+.glass-surface,
 .glass-card,
 .glass-card-elevated,
 .glass-nav,
@@ -220,6 +239,7 @@
 }
 
 .glass-panel::before,
+.glass-surface::before,
 .glass-card::before,
 .glass-card-elevated::before,
 .glass-nav::before,
@@ -244,6 +264,7 @@
 }
 
 .glass-shine.glass-panel::before,
+.glass-shine.glass-surface::before,
 .glass-shine.glass-card::before,
 .glass-shine.glass-card-elevated::before,
 .glass-shine.glass-nav::before,
@@ -272,6 +293,7 @@
 }
 
 .glass-panel::after,
+.glass-surface::after,
 .glass-card::after,
 .glass-card-elevated::after,
 .glass-nav::after,
@@ -307,6 +329,8 @@
 @media (hover: none), (prefers-reduced-motion: reduce) {
   .glass-panel::before,
   .glass-panel::after,
+  .glass-surface::before,
+  .glass-surface::after,
   .glass-card::before,
   .glass-card::after,
   .glass-card-elevated::before,

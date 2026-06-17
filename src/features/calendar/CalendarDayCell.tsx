@@ -65,7 +65,7 @@ export function CalendarDayCell({
         <div
           id={markerTooltipId}
           role="tooltip"
-          className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-max max-w-52 -translate-x-1/2 rounded-glass border border-white/15 bg-slate-900/95 px-3 py-2 text-center text-xs text-white/90 shadow-lg group-hover:block group-focus-within:block"
+          className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-max max-w-52 -translate-x-1/2 rounded-glass glass-card px-3 py-2 text-center text-xs text-white/90 shadow-lg group-hover:block group-focus-within:block"
         >
           {markerText}
         </div>
@@ -75,7 +75,7 @@ export function CalendarDayCell({
         <div
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-max max-w-48 -translate-x-1/2 rounded-glass border border-white/15 bg-slate-900/95 px-3 py-2 text-left text-xs text-white/90 shadow-lg group-hover:block group-focus-within:block"
+          className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-max max-w-48 -translate-x-1/2 rounded-glass glass-card px-3 py-2 text-left text-xs text-white/90 shadow-lg group-hover:block group-focus-within:block"
         >
           <p className="font-medium text-white">
             {date.toLocaleDateString(undefined, {

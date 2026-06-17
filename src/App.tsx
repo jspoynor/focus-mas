@@ -6,13 +6,14 @@ import { LeftPanel } from './components/LeftPanel'
 import { SignInScreen } from './components/SignInScreen'
 import { ContributionCalendar } from './features/calendar/ContributionCalendar'
 import { CenterColumn } from './features/session/CenterColumn'
+import { useWallpaperCycle } from './hooks/useWallpaperCycle'
 import { useAppStore } from './store/useAppStore'
 
-function MainShell() {
+function MainShell({ onCycleWallpaper }: { onCycleWallpaper: () => void }) {
   const userDataStatus = useAppStore((s) => s.userDataStatus)
 
   return (
-    <AppLayout>
+    <AppLayout onCycleWallpaper={onCycleWallpaper}>
       {userDataStatus === 'loading' ? (
         <DataLoadingSkeleton />
       ) : (
@@ -30,6 +31,7 @@ function MainShell() {
 
 function App() {
   const authStatus = useAppStore((s) => s.authStatus)
+  const { cycle } = useWallpaperCycle()
 
   return (
     <>
@@ -39,7 +41,7 @@ function App() {
       ) : authStatus === 'signed-out' ? (
         <SignInScreen />
       ) : (
-        <MainShell />
+        <MainShell onCycleWallpaper={cycle} />
       )}
     </>
   )

@@ -150,7 +150,7 @@ export function ContributionCalendar() {
           ref={scrollRef}
           className="calendar-scroll mt-1 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
         >
-          <div className="flex flex-col gap-4">
+          <div className="calendar-scroll-inner flex flex-col gap-4">
             <div ref={topSentinelRef} className="h-px shrink-0" aria-hidden="true" />
             {calendar.months.map((month, index) => {
               const isFirstMonthOfYear =

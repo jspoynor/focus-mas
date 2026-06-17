@@ -115,7 +115,7 @@ export function LeftPanel() {
 
       {pendingStepBackTargetMinutes !== null ? (
         <div
-          className="ui-surface mt-6 rounded-glass border border-white/15 bg-white/5 p-4"
+          className="ui-surface mt-6 rounded-glass p-4"
           role="region"
           aria-label="Step back offer"
         >

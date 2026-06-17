@@ -20,7 +20,7 @@ export function SignInScreen() {
 
   return (
     <div className="app-shell flex min-h-svh items-center justify-center px-4 py-12">
-      <div className="glass-card glass-shine w-full max-w-md rounded-glass-lg p-8 text-center">
+      <div className="glass-card w-full max-w-md rounded-glass-lg p-8 text-center">
         <p className="text-xs uppercase tracking-widest text-white/50">Focus Mastery</p>
         <h1 className="mt-2 text-3xl font-semibold text-white">Focus Mastery</h1>
         <p className="mt-4 text-sm leading-relaxed text-white/75">
