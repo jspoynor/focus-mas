@@ -14,6 +14,7 @@ export interface DaySessionStats {
   completedCount: number
   cleanCount: number
   cleanRate: number | null
+  longestDurationMinutes: number | null
 }
 
 export function groupSessionsByDay(sessions: FocusSession[]): Map<string, FocusSession[]> {
@@ -41,6 +42,8 @@ export function getDayStats(date: Date, sessions: FocusSession[]): DaySessionSta
   const completedCount = sessions.length
   const cleanCount = sessions.filter((session) => !session.distracted).length
   const cleanRate = completedCount > 0 ? cleanCount / completedCount : null
+  const longestDurationMinutes =
+    completedCount > 0 ? Math.max(...sessions.map((session) => session.durationMinutes)) : null
 
   return {
     dateKey,
@@ -49,7 +52,17 @@ export function getDayStats(date: Date, sessions: FocusSession[]): DaySessionSta
     completedCount,
     cleanCount,
     cleanRate,
+    longestDurationMinutes,
   }
+}
+
+export function formatUninterruptedPercent(uninterruptedRate: number): string {
+  return `${Math.round(uninterruptedRate * 100)}%`
+}
+
+export function formatDaySummaryLine(stats: DaySessionStats): string | null {
+  if (stats.longestDurationMinutes === null || stats.cleanRate === null) return null
+  return `Longest: ${stats.longestDurationMinutes} min · ${formatUninterruptedPercent(stats.cleanRate)} uninterrupted`
 }
 
 /** Seven full months centered on today: monthsBefore + current + monthsAfter. */

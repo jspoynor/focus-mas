@@ -17,17 +17,40 @@
   body {
     @apply h-svh font-sans text-slate-100 antialiased;
   }
+
+  button {
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease,
+      box-shadow 120ms ease,
+      color 120ms ease,
+      opacity 120ms ease;
+  }
+
+  button:active:not(:disabled) {
+    background-color: var(--button-press-tint);
+  }
+
+  button[aria-pressed="true"]:not(:disabled) {
+    background-color: var(--button-press-tint);
+  }
 }
 
 /* Bundled wallpaper for offline PWA support */
 .app-shell {
-  --header-block: 2.75rem;
-  --sidebar-height: calc(100svh - var(--header-block));
   --glass-subtle-tint: rgba(55, 55, 60, 0.04);
+  --glass-subtle-tint-active: rgba(255, 255, 255, 0.22);
   --glass-subtle-border: rgba(255, 255, 255, 0.05);
+  --glass-subtle-border-active: rgba(255, 255, 255, 0.38);
   --glass-subtle-highlight: rgba(255, 255, 255, 0.05);
+  --glass-subtle-highlight-active: rgba(255, 255, 255, 0.18);
   --glass-subtle-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --glass-subtle-shadow-active:
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 4px 20px rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
   --glass-subtle-blur: blur(6px) saturate(110%);
+  --button-press-tint: rgba(255, 255, 255, 0.2);
 
   position: relative;
   isolation: isolate;
@@ -103,6 +126,25 @@
   background: transparent;
 }
 
+/* Portaled calendar tooltips sit on document.body — use explicit opaque glass */
+.glass-tooltip {
+  background-color: rgba(24, 26, 32, 0.96);
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-tooltip {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: rgba(35, 37, 44, 0.98);
+  }
+}
+
 @layer components {
   .glass-shine::after {
     background: linear-gradient(
@@ -139,8 +181,8 @@
 /* Outside @layer so panel glass wins over liquidglass-tailwind utilities */
 .glass-panel {
   display: flex;
-  height: var(--sidebar-height);
-  max-height: var(--sidebar-height);
+  height: 100%;
+  max-height: 100%;
   min-height: 0;
   flex-direction: column;
 }
@@ -164,23 +206,34 @@
 .glass-btn-secondary,
 .glass-btn-pill,
 .glass-btn-oval {
-  transition: opacity 150ms ease;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    opacity 150ms ease;
 }
 
-.glass-btn:hover,
-.glass-btn-secondary:hover,
-.glass-btn-pill:hover,
-.glass-btn-oval:hover:not(:disabled) {
+.glass-btn:hover:not(:disabled):not([aria-pressed="true"]),
+.glass-btn-secondary:hover:not(:disabled):not([aria-pressed="true"]),
+.glass-btn-pill:hover:not(:disabled):not([aria-pressed="true"]),
+.glass-btn-oval:hover:not(:disabled):not([aria-pressed="true"]) {
   transform: none;
   background-color: var(--glass-subtle-tint);
   box-shadow: var(--glass-subtle-shadow), inset 0 1px 0 var(--glass-subtle-highlight);
 }
 
-.glass-btn:active,
-.glass-btn-secondary:active,
-.glass-btn-pill:active,
-.glass-btn-oval:active:not(:disabled) {
+.glass-btn:active:not(:disabled),
+.glass-btn-secondary:active:not(:disabled),
+.glass-btn-pill:active:not(:disabled),
+.glass-btn-oval:active:not(:disabled),
+.glass-btn[aria-pressed="true"]:not(:disabled),
+.glass-btn-secondary[aria-pressed="true"]:not(:disabled),
+.glass-btn-pill[aria-pressed="true"]:not(:disabled),
+.glass-btn-oval[aria-pressed="true"]:not(:disabled) {
   transform: none;
+  background-color: var(--glass-subtle-tint-active);
+  border-color: var(--glass-subtle-border-active);
+  box-shadow: var(--glass-subtle-shadow-active), inset 0 1px 0 var(--glass-subtle-highlight-active);
 }
 
 .glass-btn-oval:hover:not(:disabled) {
@@ -209,12 +262,23 @@
     -webkit-backdrop-filter: none;
     background-color: rgba(55, 55, 60, 0.9);
   }
+
+  .glass-btn:active:not(:disabled),
+  .glass-btn-secondary:active:not(:disabled),
+  .glass-btn-pill:active:not(:disabled),
+  .glass-btn-oval:active:not(:disabled),
+  .glass-btn[aria-pressed="true"]:not(:disabled),
+  .glass-btn-secondary[aria-pressed="true"]:not(:disabled),
+  .glass-btn-pill[aria-pressed="true"]:not(:disabled),
+  .glass-btn-oval[aria-pressed="true"]:not(:disabled) {
+    background-color: rgba(130, 130, 140, 1);
+  }
 }
 
 :root {
   --app-wallpaper: url('/wallpaper.jpg');
-  --cursor-x: 50vw;
-  --cursor-y: 50vh;
+  --cursor-x: 50%;
+  --cursor-y: 50%;
   --cursor-light-radius: 28rem;
   --cursor-light-core: rgba(255, 255, 255, 0.045);
   --cursor-light-mid: rgba(255, 255, 255, 0.018);
@@ -260,7 +324,6 @@
     var(--cursor-light-mid) 38%,
     transparent 72%
   );
-  background-attachment: fixed;
 }
 
 .glass-shine.glass-panel::before,
@@ -289,7 +352,6 @@
       rgba(255, 255, 255, 0.06) 82%,
       rgba(255, 255, 255, 0.12) 100%
     );
-  background-attachment: fixed, scroll;
 }
 
 .glass-panel::after,
@@ -315,7 +377,6 @@
     var(--cursor-panel-border-mid) 40%,
     transparent 68%
   );
-  background-attachment: fixed;
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);

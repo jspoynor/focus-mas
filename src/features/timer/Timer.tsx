@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { breakMinutes } from '../../lib/breakDuration'
 import { formatCountdown } from '../../lib/formatCountdown'
 import { playSessionCompleteCue } from '../../lib/sessionAudio'
@@ -10,21 +10,34 @@ type TimerMode = 'idle' | 'focus' | 'break'
 
 const DEFAULT_STAGE_MINUTES = 25
 
+export interface TimerDevHandles {
+  completeNow: () => void
+  skipBreak: () => void
+  getMode: () => TimerMode
+  subscribeToModeChange: (listener: () => void) => () => void
+}
+
 interface TimerProps {
   compact?: boolean
   completed?: boolean
   onFocusComplete?: (session: PendingSurveySession) => void
   breakDurationMinutes?: number | null
   onBreakStarted?: () => void
+  /** When set, focus sessions run for this many seconds instead of stage minutes. */
+  shortDurationSeconds?: number | null
 }
 
-export function Timer({
-  compact = false,
-  completed = false,
-  onFocusComplete,
-  breakDurationMinutes = null,
-  onBreakStarted,
-}: TimerProps) {
+export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
+  {
+    compact = false,
+    completed = false,
+    onFocusComplete,
+    breakDurationMinutes = null,
+    onBreakStarted,
+    shortDurationSeconds = null,
+  },
+  ref,
+) {
   const userId = useAppStore((s) => s.userId)
   const progress = useAppStore((s) => s.progress)
   const setActiveSessionId = useAppStore((s) => s.setActiveSessionId)
@@ -40,6 +53,7 @@ export function Timer({
   const modeRef = useRef<TimerMode>('idle')
   const focusDurationRef = useRef(DEFAULT_STAGE_MINUTES)
   const onFocusCompleteRef = useRef(onFocusComplete)
+  const modeListenersRef = useRef(new Set<() => void>())
 
   const stageMinutes = progress?.currentStageMinutes ?? DEFAULT_STAGE_MINUTES
 
@@ -75,7 +89,18 @@ export function Timer({
     [onBreakStarted],
   )
 
-  const handleFocusComplete = useCallback(async () => {
+  const finishFocusSession = useCallback(
+    (sessionId: string, duration: number) => {
+      endTimeRef.current = null
+      clearTick()
+      setMode('idle')
+      setRemainingSeconds(0)
+      onFocusCompleteRef.current?.({ sessionId, durationMinutes: duration })
+    },
+    [clearTick],
+  )
+
+  const handleFocusComplete = useCallback(() => {
     const sessionId = sessionIdRef.current
     const startedAt = sessionStartedAtRef.current
     const duration = focusDurationRef.current
@@ -87,27 +112,22 @@ export function Timer({
     playSessionCompleteCue()
 
     if (userId && sessionId && startedAt) {
-      try {
-        await completeSession(userId, sessionId, startedAt, duration)
-      } catch (err) {
+      finishFocusSession(sessionId, duration)
+      void completeSession(userId, sessionId, startedAt, duration).catch((err) => {
         console.warn('[timer] Failed to persist session:', err)
-      }
-
-      onFocusCompleteRef.current?.({ sessionId, durationMinutes: duration })
-      setMode('idle')
-      setRemainingSeconds(0)
+      })
       return
     }
 
     if (onFocusCompleteRef.current) {
-      onFocusCompleteRef.current({ sessionId: sessionId ?? 'local', durationMinutes: duration })
-      setMode('idle')
-      setRemainingSeconds(0)
+      finishFocusSession(sessionId ?? 'local', duration)
       return
     }
 
+    endTimeRef.current = null
+    clearTick()
     startBreak(duration)
-  }, [setActiveSessionId, startBreak, userId])
+  }, [clearTick, finishFocusSession, setActiveSessionId, startBreak, userId])
 
   const startTicking = useCallback(() => {
     clearTick()
@@ -123,7 +143,7 @@ export function Timer({
       clearTick()
 
       if (modeRef.current === 'focus') {
-        void handleFocusComplete()
+        handleFocusComplete()
       } else if (modeRef.current === 'break') {
         endTimeRef.current = null
         setMode('idle')
@@ -146,10 +166,41 @@ export function Timer({
 
   useEffect(() => () => clearTick(), [clearTick])
 
+  useEffect(() => {
+    for (const listener of modeListenersRef.current) {
+      listener()
+    }
+  }, [mode])
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      completeNow: () => {
+        if (modeRef.current !== 'focus') return
+        endTimeRef.current = null
+        setRemainingSeconds(0)
+        handleFocusComplete()
+      },
+      skipBreak: () => {
+        if (modeRef.current !== 'break') return
+        resetToIdle()
+      },
+      getMode: () => modeRef.current,
+      subscribeToModeChange: (listener: () => void) => {
+        modeListenersRef.current.add(listener)
+        return () => {
+          modeListenersRef.current.delete(listener)
+        }
+      },
+    }),
+    [handleFocusComplete, resetToIdle],
+  )
+
   function handleStartFocus() {
     if (!userId || completed) return
 
     const duration = stageMinutes
+    const timerSeconds = shortDurationSeconds ?? duration * 60
     const sessionRef = createSessionRef(userId)
 
     sessionIdRef.current = sessionRef.id
@@ -157,9 +208,9 @@ export function Timer({
     setFocusDurationMinutes(duration)
     setActiveSessionId(sessionRef.id)
 
-    endTimeRef.current = Date.now() + duration * 60 * 1000
+    endTimeRef.current = Date.now() + timerSeconds * 1000
     setMode('focus')
-    setRemainingSeconds(duration * 60)
+    setRemainingSeconds(timerSeconds)
   }
 
   function handleStop() {
@@ -239,4 +290,4 @@ export function Timer({
       </p>
     </section>
   )
-}
+})

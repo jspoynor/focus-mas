@@ -43,9 +43,7 @@ function YesNoButtons({
               type="button"
               aria-pressed={selected}
               onClick={() => onChange(answer)}
-              className={`glass-btn flex-1 rounded-glass px-4 py-2.5 text-sm font-medium transition-opacity hover:opacity-90 ${
-                selected ? 'text-white ring-1 ring-white/40' : 'text-white/75'
-              }`}
+              className="glass-btn flex-1 rounded-glass px-4 py-2.5 text-sm font-medium text-white/90"
             >
               {text}
             </button>

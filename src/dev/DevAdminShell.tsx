@@ -19,7 +19,9 @@ export function DevAdminShell() {
 
   return (
     <AppLayout onCycleWallpaper={cycle}>
-      <AdminPage />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <AdminPage />
+      </div>
     </AppLayout>
   )
 }

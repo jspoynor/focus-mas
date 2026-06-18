@@ -1,6 +1,13 @@
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, Timestamp, type DocumentReference } from 'firebase/firestore'
 import { db } from './firebase'
 import type { UserProgress } from '../types'
+
+/** Single progress doc: users/{userId}/progress/main (Firestore paths need an even segment count). */
+const PROGRESS_DOC_ID = 'main'
+
+function progressRef(userId: string): DocumentReference {
+  return doc(db, 'users', userId, 'progress', PROGRESS_DOC_ID)
+}
 
 export const DEFAULT_PROGRESS: UserProgress = {
   currentStageMinutes: 25,
@@ -35,7 +42,7 @@ function parseProgressData(data: Record<string, unknown>): UserProgress {
 }
 
 export async function loadUserProgress(userId: string): Promise<UserProgress> {
-  const snap = await getDoc(doc(db, 'users', userId, 'progress'))
+  const snap = await getDoc(progressRef(userId))
 
   if (!snap.exists()) {
     return { ...DEFAULT_PROGRESS }
@@ -46,7 +53,7 @@ export async function loadUserProgress(userId: string): Promise<UserProgress> {
 
 /** Creates the progress document on first sign-in if it does not exist. */
 export async function ensureUserProgress(userId: string): Promise<UserProgress> {
-  const ref = doc(db, 'users', userId, 'progress')
+  const ref = progressRef(userId)
   const snap = await getDoc(ref)
 
   if (!snap.exists()) {
@@ -66,7 +73,7 @@ export async function saveUserProgress(
   userId: string,
   updates: Partial<UserProgress>,
 ): Promise<void> {
-  const ref = doc(db, 'users', userId, 'progress')
+  const ref = progressRef(userId)
   const payload: Record<string, unknown> = {}
 
   if (updates.currentStageMinutes !== undefined) {

@@ -1,26 +1,26 @@
 import { MIN_STAGE_MINUTES, STAGE_INCREMENT } from './mastery'
 
-/** 13-step summer belt ladder — upper bounds for each band (exclusive except last). */
-const BELT_BANDS = [0.08, 0.15, 0.23, 0.31, 0.38, 0.46, 0.54, 0.62, 0.69, 0.77, 0.85, 0.92, 1.01] as const
-
 export const BELT_HEX = [
-  '#FFF8E7', // 0–8% cream
-  '#FFE680', // 8–15%
-  '#FFD700', // 15–23%
-  '#FFA500', // 23–31%
-  '#FF6B35', // 31–38%
-  '#A8D400', // 38–46%
-  '#4CAF50', // 46–54%
-  '#26A69A', // 54–62%
-  '#29B6F6', // 62–69%
-  '#5C6BC0', // 69–77%
-  '#AB47BC', // 77–85%
-  '#8D5524', // 85–92%
-  '#2C1503', // 92–100%
+  '#FFF8E7', // 25 min — cream
+  '#FFE680', // 30 min
+  '#FFD700', // 35 min
+  '#FFA500', // 40 min
+  '#FF6B35', // 45 min
+  '#A8D400', // 50 min
+  '#4CAF50', // 55 min
+  '#26A69A', // 60 min
+  '#29B6F6', // 65 min
+  '#5C6BC0', // 70 min
+  '#AB47BC', // 75 min
+  '#8D5524', // 80 min
+  '#2C1503', // 85–90 min — espresso
 ] as const
 
 /** Warm orange belt step — today marker on the contribution calendar. */
 export const TODAY_MARKER_COLOR = '#FF6B35'
+
+const MIN_CELL_OPACITY = 0.2
+const OPACITY_RANGE = 0.8
 
 export function getStageColor(stageMinutes: number): string {
   const stageIndex = Math.round((stageMinutes - MIN_STAGE_MINUTES) / STAGE_INCREMENT)
@@ -28,11 +28,19 @@ export function getStageColor(stageMinutes: number): string {
   return BELT_HEX[colorIndex]
 }
 
-export function getBeltColor(cleanRate: number): string {
-  for (let i = 0; i < BELT_BANDS.length; i++) {
-    if (cleanRate < BELT_BANDS[i]) {
-      return BELT_HEX[i]
-    }
-  }
-  return BELT_HEX[BELT_HEX.length - 1]
+/** Maps a day's uninterrupted rate to calendar cell opacity (20%–100%). */
+export function getUninterruptedOpacity(uninterruptedRate: number): number {
+  return MIN_CELL_OPACITY + OPACITY_RANGE * uninterruptedRate
+}
+
+export function getCalendarCellFill(longestDurationMinutes: number, uninterruptedRate: number): string {
+  const color = getStageColor(longestDurationMinutes)
+  return hexToRgba(color, getUninterruptedOpacity(uninterruptedRate))
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = Number.parseInt(hex.slice(1, 3), 16)
+  const g = Number.parseInt(hex.slice(3, 5), 16)
+  const b = Number.parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }

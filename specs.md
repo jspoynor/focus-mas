@@ -97,27 +97,38 @@ Once the window is full:
 GitHub contribution-style grid. Each cell = one calendar day.
 
 - **Empty cell** (no completed sessions that day): no fill, grid placeholder only.
-- **Filled cell**: color encodes `cleanSessions / completedSessions` for that day using the 13-step belt color ladder (see §6.2).
+- **Filled cell**: two visual channels (see §6.2):
+  - **Hue** — longest focus session that day (`max(durationMinutes)`), mapped to the stage-aligned belt ladder.
+  - **Opacity** — that day's uninterrupted rate: `cleanSessions / completedSessions`.
 
-### 6.2 Belt color ladder (summer palette)
+### 6.2 Cell fill encoding
 
-13 discrete steps mapped to clean-rate bands (~8% each):
+**Longest session → hue.** Use the 13-step summer belt palette aligned to focus-stage lengths (25–90 min, 5-min steps). Durations below 25 min clamp to step 1; above 90 min clamp to step 13. Same mapping as the stage label in the calendar header.
 
-| Step | Band | Color |
-|------|------|-------|
-| 1 | 0–8% | Warm white / cream |
-| 2 | 8–15% | Pale gold |
-| 3 | 15–23% | Sunny yellow |
-| 4 | 23–31% | Amber |
-| 5 | 31–38% | Warm orange |
-| 6 | 38–46% | Chartreuse |
-| 7 | 46–54% | Fresh green |
-| 8 | 54–62% | Teal |
-| 9 | 62–69% | Sky blue |
-| 10 | 69–77% | Indigo |
-| 11 | 77–85% | Warm purple |
-| 12 | 85–92% | Rich brown |
-| 13 | 92–100% | Deep espresso / near-black |
+| Step | Stage (min) | Color |
+|------|-------------|-------|
+| 1 | 25 | Warm white / cream |
+| 2 | 30 | Pale gold |
+| 3 | 35 | Sunny yellow |
+| 4 | 40 | Amber |
+| 5 | 45 | Warm orange |
+| 6 | 50 | Chartreuse |
+| 7 | 55 | Fresh green |
+| 8 | 60 | Teal |
+| 9 | 65 | Sky blue |
+| 10 | 70 | Indigo |
+| 11 | 75 | Warm purple |
+| 12 | 80 | Rich brown |
+| 13 | 85–90 | Deep espresso / near-black |
+
+**Uninterrupted rate → opacity.** Linear scale with a visible floor so distracted days still show the duration hue faintly:
+
+```
+uninterruptedRate = cleanSessions / completedSessions   // that day
+cellOpacity       = 0.20 + 0.80 × uninterruptedRate
+```
+
+100% uninterrupted → full saturation. 0% uninterrupted → 20% opacity (faint tint).
 
 ### 6.3 Date markers
 
@@ -126,10 +137,12 @@ GitHub contribution-style grid. Each cell = one calendar day.
 
 ### 6.4 Session history tooltip
 
-Hovering a past day cell shows a list of that day's completed sessions, each with:
-- Session duration
-- Q1 answer (distracted: yes/no)
-- Q2 answer (used phone: yes/no)
+Hovering a past day cell shows:
+- A summary line: *"Longest: [N] min · [X]% uninterrupted"*
+- A list of that day's completed sessions, each with:
+  - Session duration
+  - Q1 answer (distracted: yes/no)
+  - Q2 answer (used phone: yes/no)
 
 ---
 
@@ -237,4 +250,10 @@ projectedDate    = today + daysToAdvance
 
 // Step-back trigger (evaluated after each session):
 shouldOfferStepBack = newMasteryPercent < prevMasteryPercent AND newMasteryPercent < 0.50
+
+// Calendar cell fill (per day):
+longestMinutes     = max(durationMinutes) among that day's completed sessions
+uninterruptedRate  = count(distracted=false) / count(sessions that day)
+cellHue            = beltColor(stageAligned(longestMinutes))   // clamp 25–90 min ladder
+cellOpacity        = 0.20 + 0.80 × uninterruptedRate
 ```

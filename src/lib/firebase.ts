@@ -1,8 +1,12 @@
-import { initializeApp, type FirebaseApp } from 'firebase/app'
+import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, type Auth } from 'firebase/auth'
 import {
-  enableIndexedDbPersistence,
+  enableNetwork,
   getFirestore,
+  initializeFirestore,
+  memoryLocalCache,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   type Firestore,
 } from 'firebase/firestore'
 
@@ -36,17 +40,29 @@ function assertFirebaseEnv(): void {
 
 assertFirebaseEnv()
 
-export const app: FirebaseApp = initializeApp(firebaseConfig)
-export const auth: Auth = getAuth(app)
-export const db: Firestore = getFirestore(app)
+function getOrCreateApp(): FirebaseApp {
+  return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)
+}
 
-void enableIndexedDbPersistence(db).catch((err: unknown) => {
-  const code =
-    err && typeof err === 'object' && 'code' in err
-      ? String((err as { code: string }).code)
-      : ''
+/** Survives Vite HMR: reuse the existing Firestore instance when already initialized. */
+function getOrCreateFirestore(firebaseApp: FirebaseApp): Firestore {
+  const settings = import.meta.env.DEV
+    ? { localCache: memoryLocalCache() }
+    : {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      }
 
-  if (code !== 'failed-precondition' && code !== 'unimplemented') {
-    console.warn('[firebase] Offline persistence failed:', err)
+  try {
+    return initializeFirestore(firebaseApp, settings)
+  } catch {
+    return getFirestore(firebaseApp)
   }
+}
+
+export const app: FirebaseApp = getOrCreateApp()
+export const auth: Auth = getAuth(app)
+export const db: Firestore = getOrCreateFirestore(app)
+
+void enableNetwork(db).catch((err: unknown) => {
+  console.warn('[firebase] Could not enable Firestore network:', err)
 })

@@ -39,7 +39,7 @@ Status: [x] Done
 ---
 
 ## Phase 2 — Inline dev toolbar
-Status: [ ] Not started
+Status: [x] Done
 
 **Goal:** Toggle a floating dev panel on the main three-column layout and shortcut the timer → survey → break loop without leaving the real UI.
 
@@ -58,7 +58,7 @@ Status: [ ] Not started
 ---
 
 ## Phase 3 — `/admin` reset + progress editor
-Status: [ ] Not started
+Status: [x] Done
 
 **Goal:** Full account wipe and manual progress editing from `/admin`, with clear summaries before destructive actions.
 

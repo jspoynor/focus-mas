@@ -5,11 +5,20 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    headers: {
+      // Lets Google sign-in popup close cleanly (avoids Firebase COOP console noise).
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      devOptions: {
+        enabled: false,
+      },
       includeAssets: [
         'favicon.svg',
         'icon.svg',
