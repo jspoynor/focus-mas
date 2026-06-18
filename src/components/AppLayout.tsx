@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { signOut } from '../lib/auth'
+import { formatLongDateWithOrdinal } from '../lib/formatDate'
 import { useAppStore } from '../store/useAppStore'
 
 interface AppLayoutProps {
@@ -9,6 +10,8 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, onCycleWallpaper }: AppLayoutProps) {
   const displayName = useAppStore((s) => s.displayName)
+  const today = new Date()
+  const todayLabel = formatLongDateWithOrdinal(today)
 
   async function handleSignOut() {
     await signOut()
@@ -16,9 +19,15 @@ export function AppLayout({ children, onCycleWallpaper }: AppLayoutProps) {
 
   return (
     <div className="app-shell flex h-svh flex-col overflow-hidden">
-      <header className="z-10 flex shrink-0 items-center justify-between bg-transparent px-6 py-3">
+      <header className="z-10 grid shrink-0 grid-cols-[1fr_auto_1fr] items-center bg-transparent px-6 py-3">
         <p className="text-xs uppercase tracking-widest text-white/50">Focus Mastery</p>
-        <div className="flex items-center gap-4">
+        <time
+          dateTime={today.toISOString().slice(0, 10)}
+          className="text-sm text-white/60"
+        >
+          {todayLabel}
+        </time>
+        <div className="flex items-center justify-self-end gap-4">
           {displayName ? (
             <span className="text-xs tracking-widest text-white/50">{displayName}</span>
           ) : null}

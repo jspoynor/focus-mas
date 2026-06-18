@@ -144,6 +144,16 @@ Hovering a past day cell shows:
   - Q1 answer (distracted: yes/no)
   - Q2 answer (used phone: yes/no)
 
+### 6.5 Planner snapshot (calendar click)
+
+Clicking a **today or past** calendar cell opens **snapshot mode** for that date. Future dates are not clickable for planner purposes.
+
+- **Left panel** loads that date's archived planner data (read-only).
+- **Day plan** shows saved text, or placeholder *"No day plan recorded"* if empty.
+- **Focus session** arrows browse that day's focus snapshots only (no draft slot in snapshot mode). Placeholder *"No focus plans recorded"* if none exist. Header: `Focus session · N of M`.
+- **App header** center replaces the live date with `Snapshot · [long date with ordinal]` and a **Return to today** button to the right of the date label.
+- Hover tooltips for session stats continue to work alongside click-to-snapshot.
+
 ---
 
 ## 7. UI layout
@@ -156,9 +166,52 @@ Hovering a past day cell shows:
 └─────────────────────────────────────────────────┘
 ```
 
-- **Left panel:** styled glass card, visually balanced with the right calendar panel. Contents TBD (reserved for future feature).
+- **Left panel:** daily planner (see §7.2) — styled glass card, visually balanced with the right calendar panel.
 - **Center:** Pomodoro timer — dominant, large.
 - **Right panel:** contribution calendar with mastery date markers.
+
+### 7.2 Left panel — daily planner
+
+Two stacked text areas inside the left glass panel, split **5/8** (top) and **3/8** (bottom) of the panel height.
+
+| Section | Header | Role |
+|---------|--------|------|
+| Top (5/8) | **Day plan** | Freeform notes for the whole day |
+| Bottom (3/8) | **Focus session** | Plan for the upcoming (or in-progress) focus session; `‹` / `›` arrows flank the header |
+
+#### 7.2.1 Live today mode (default)
+
+- **Day plan** is editable all day, including during an active focus session, survey, or break.
+- **Focus session** textarea:
+  - Editable only while the timer is **idle** (ready state).
+  - **Locked** (read-only) from **Start focus** until the timer returns to **idle** after survey + break (or skip break).
+  - Clears when returning to idle so the user can plan the next session.
+- **Focus arrows** paginate snapshots for today plus the live draft as the **last page**:
+  - Pages `1 … N` = completed session snapshots (read-only while browsing).
+  - Page `N + 1` = empty editable draft for the next session.
+  - Header shows `Focus session · K of M` where `M = N + 1` in live mode.
+- **Stop session** (abandoned before timer zero): remove the snapshot created at Start focus for that attempt and **restore** the plan text to the focus textarea.
+
+#### 7.2.2 Day boundary (local midnight)
+
+A day completes at **local midnight**. When the calendar date rolls over while the app is open:
+
+- Day plan textarea clears immediately (yesterday is already persisted).
+- Focus session resets to page 1 of 1 (empty draft).
+- If the user is viewing a **snapshot** of another date, the left panel does not change until they tap **Return to today**.
+
+#### 7.2.3 Snapshot mode (calendar lookback)
+
+Entered by clicking a today or past calendar cell (§6.5). Both sections are read-only. Focus arrows browse only archived snapshots (no draft page). **Return to today** exits snapshot mode and restores live editing for the current date.
+
+#### 7.2.4 Persistence timing
+
+| Field | When it writes to Firestore |
+|-------|----------------------------|
+| Day plan | Debounced auto-save (~2 s after typing stops) |
+| Focus session plan | Snapshot on **Start focus**, linked to the new `sessionId` |
+
+Writes use the same offline persistence as sessions; queued while offline and sync on reconnect.
 
 ### 7.2 Visual style
 
@@ -174,7 +227,12 @@ When the timer hits zero, the survey slides up from the bottom of the center col
 
 An audio cue plays when the timer hits zero. No browser notifications.
 
-### 7.5 Sign-in screen
+### 7.5 App header — date and snapshot
+
+- **Live mode:** center shows today's long date with ordinal (e.g. *June 17th, 2026*).
+- **Snapshot mode:** center shows `Snapshot · [long date with ordinal]` and a **Return to today** control immediately to the right of the date label.
+
+### 7.7 Sign-in screen
 
 Unauthenticated users see a single screen:
 - App name: **Focus Mastery**
@@ -211,6 +269,21 @@ Firebase Auth, Google sign-in provider only.
 | `lastProgressionAt` | timestamp \| null | Timestamp of last stage advance |
 | `prevMasteryPercent` | number \| null | Mastery % after the previous session — used to detect declining rate |
 | `stepBackOfferedAt` | timestamp \| null | Last time step-back prompt was shown |
+
+#### `users/{userId}/plannerDays/{dateKey}`
+
+One document per local calendar day. `dateKey` = `YYYY-MM-DD` in the user's local timezone (same scheme as calendar `toDateKey`).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `dayPlan` | string | Freeform day notes; empty string if none |
+| `focusSessions` | array | Ordered snapshots taken at Start focus |
+| `focusSessions[].sessionId` | string | Matches `users/{userId}/sessions/{sessionId}` created at Start focus |
+| `focusSessions[].planText` | string | Focus plan text at session start |
+| `focusSessions[].startedAt` | timestamp | When Start focus was pressed |
+| `updatedAt` | timestamp | Last write (day-plan auto-save or focus snapshot) |
+
+**Dev reset account** (`/admin`) deletes all `plannerDays` documents in addition to sessions and progress.
 
 ### 8.3 Offline / PWA sync
 
