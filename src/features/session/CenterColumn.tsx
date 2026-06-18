@@ -92,6 +92,17 @@ export function CenterColumn() {
     setBreakDurationMinutes(null)
   }, [])
 
+  const handleReturnToReady = useCallback(() => {
+    const { plannerViewMode, recordFocusSessionCycleComplete } = useAppStore.getState()
+    if (plannerViewMode === 'live') {
+      recordFocusSessionCycleComplete()
+    }
+  }, [])
+
+  useEffect(() => {
+    useAppStore.getState().setSurveyActive(pendingSurvey !== null)
+  }, [pendingSurvey])
+
   const submitSurveyPreset = useCallback(
     (clean: boolean) => {
       void handleSurveySubmit({
@@ -137,6 +148,7 @@ export function CenterColumn() {
         onFocusComplete={handleFocusComplete}
         breakDurationMinutes={breakDurationMinutes}
         onBreakStarted={handleBreakStarted}
+        onReturnToReady={handleReturnToReady}
         shortDurationSeconds={shortDurationSeconds}
       />
       {pendingSurvey ? (

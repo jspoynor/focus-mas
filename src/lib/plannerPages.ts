@@ -8,6 +8,16 @@ export function getFocusPageCount(snapshotCount: number, mode: PlannerViewMode):
   return snapshotCount
 }
 
+export function clampFocusPageIndex(
+  pageIndex: number,
+  snapshotCount: number,
+  mode: PlannerViewMode,
+): number {
+  const pageCount = getFocusPageCount(snapshotCount, mode)
+  if (pageCount === 0) return 0
+  return Math.min(Math.max(0, pageIndex), pageCount - 1)
+}
+
 export function canFocusGoPrev(pageIndex: number): boolean {
   return pageIndex > 0
 }
@@ -28,6 +38,15 @@ export function isFocusDraftPage(
   mode: PlannerViewMode,
 ): boolean {
   return mode === 'live' && pageIndex === snapshotCount
+}
+
+/** Whether the page at `pageIndex` shows an archived focus snapshot (read-only). */
+export function isFocusSnapshotPage(
+  pageIndex: number,
+  snapshotCount: number,
+  mode: PlannerViewMode,
+): boolean {
+  return pageIndex >= 0 && pageIndex < snapshotCount && !isFocusDraftPage(pageIndex, snapshotCount, mode)
 }
 
 /** Default page after idle clear (live) or when opening a snapshot day. */

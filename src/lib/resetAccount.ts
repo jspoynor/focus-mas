@@ -5,6 +5,7 @@ import {
   type DocumentReference,
 } from 'firebase/firestore'
 import { db } from './firebase'
+import { deleteAllPlannerDays } from './plannerDays'
 import { DEFAULT_PROGRESS, saveUserProgress } from './progress'
 
 const BATCH_LIMIT = 500
@@ -38,9 +39,15 @@ async function resetUserProgressToDefaults(userId: string): Promise<void> {
   await saveUserProgress(userId, { ...DEFAULT_PROGRESS })
 }
 
-/** Deletes all sessions and resets progress to defaults. */
-export async function resetUserAccount(userId: string): Promise<{ deletedSessionCount: number }> {
-  const deletedSessionCount = await deleteAllUserSessions(userId)
+/** Deletes all sessions, planner days, and resets progress to defaults. */
+export async function resetUserAccount(userId: string): Promise<{
+  deletedSessionCount: number
+  deletedPlannerDayCount: number
+}> {
+  const [deletedSessionCount, deletedPlannerDayCount] = await Promise.all([
+    deleteAllUserSessions(userId),
+    deleteAllPlannerDays(userId),
+  ])
   await resetUserProgressToDefaults(userId)
-  return { deletedSessionCount }
+  return { deletedSessionCount, deletedPlannerDayCount }
 }

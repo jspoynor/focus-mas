@@ -60,7 +60,7 @@ export function formatProjectedDateLabel(date: Date): string {
     day: 'numeric',
     year: 'numeric',
   })
-  return `If all upcoming sessions are clean, you could advance by ${formatted}.`
+  return `If all upcoming sessions are uninterrupted, you could advance by ${formatted}.`
 }
 
 export function projectedDateKey(date: Date | null): string | null {

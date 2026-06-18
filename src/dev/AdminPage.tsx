@@ -9,6 +9,7 @@ import {
 } from '../lib/mastery'
 import { refreshUserData } from '../lib/refreshUserData'
 import { countUserSessions, resetUserAccount } from '../lib/resetAccount'
+import { countPlannerDays } from '../lib/plannerDays'
 import { DEFAULT_PROGRESS, saveUserProgress } from '../lib/progress'
 import { useAppStore } from '../store/useAppStore'
 import type { UserProgress } from '../types'
@@ -59,7 +60,7 @@ function RollingWindowSummary() {
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-white/60">Clean rate</dt>
+          <dt className="text-white/60">Uninterrupted rate</dt>
           <dd className="font-mono text-white/90">
             {window.sessionCount > 0 ? formatMasteryPercent(window.cleanRate) : '—'}
           </dd>
@@ -193,6 +194,7 @@ function ResetAccountSection() {
   const userId = useAppStore((s) => s.userId)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [sessionCount, setSessionCount] = useState<number | null>(null)
+  const [plannerDayCount, setPlannerDayCount] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -202,11 +204,17 @@ function ResetAccountSection() {
     setError(null)
     setConfirmOpen(true)
     setSessionCount(null)
+    setPlannerDayCount(null)
     try {
-      setSessionCount(await countUserSessions(userId))
+      const [sessions, plannerDays] = await Promise.all([
+        countUserSessions(userId),
+        countPlannerDays(userId),
+      ])
+      setSessionCount(sessions)
+      setPlannerDayCount(plannerDays)
     } catch (err) {
-      console.error('[admin] Session count failed:', err)
-      setError('Could not load session count.')
+      console.error('[admin] Account counts failed:', err)
+      setError('Could not load account counts.')
       setConfirmOpen(false)
     }
   }
@@ -216,6 +224,7 @@ function ResetAccountSection() {
     setError(null)
     try {
       await resetUserAccount(userId)
+      useAppStore.getState().resetPlannerState()
       await refreshUserData(userId)
       setConfirmOpen(false)
     } catch (err) {
@@ -231,8 +240,8 @@ function ResetAccountSection() {
       <div className="rounded-glass border border-red-500/20 bg-red-950/20 p-4 backdrop-blur-md">
         <p className="text-xs uppercase tracking-widest text-red-300/70">Danger zone</p>
         <p className="mt-2 text-sm text-white/70">
-          Deletes all session documents and resets progress to defaults on your real Firestore
-          account.
+          Deletes all session and planner day documents and resets progress to defaults on your real
+          Firestore account.
         </p>
         {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
         <button
@@ -249,7 +258,7 @@ function ResetAccountSection() {
         title="Reset account?"
         confirmLabel="Reset account"
         destructive
-        busy={busy || sessionCount === null}
+        busy={busy || sessionCount === null || plannerDayCount === null}
         onCancel={() => !busy && setConfirmOpen(false)}
         onConfirm={() => void handleReset()}
       >
@@ -259,6 +268,11 @@ function ResetAccountSection() {
             Delete{' '}
             <strong>{sessionCount === null ? '…' : sessionCount}</strong> session document
             {sessionCount === 1 ? '' : 's'}
+          </li>
+          <li>
+            Delete{' '}
+            <strong>{plannerDayCount === null ? '…' : plannerDayCount}</strong> planner day document
+            {plannerDayCount === 1 ? '' : 's'}
           </li>
           <li>
             Reset progress: <code className="text-white/90">currentStageMinutes</code> → 25,

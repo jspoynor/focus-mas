@@ -63,7 +63,7 @@ Status: [x] Done
 ---
 
 ## Phase 3 — Day plan persistence
-Status: [ ] Not Started
+Status: [x] Done
 
 **Goal:** Day plan loads on sign-in and auto-saves to Firestore.
 
@@ -79,7 +79,7 @@ Status: [ ] Not Started
 ---
 
 ## Phase 4 — Focus plan + timer integration
-Status: [ ] Not Started
+Status: [x] Done
 
 **Goal:** Focus plan snapshots on Start focus and follows the session lifecycle.
 
@@ -95,7 +95,7 @@ Status: [ ] Not Started
 ---
 
 ## Phase 5 — Focus session arrows
-Status: [ ] Not Started
+Status: [x] Done
 
 **Goal:** Browse today's focus snapshots; draft is always the last page.
 
@@ -111,7 +111,7 @@ Status: [ ] Not Started
 ---
 
 ## Phase 6 — Calendar snapshot mode
-Status: [ ] Not Started
+Status: [x] Done
 
 **Goal:** Click today or past calendar cells to replay archived planner data.
 
@@ -131,7 +131,7 @@ Status: [ ] Not Started
 ---
 
 ## Phase 7 — Dev reset + polish
-Status: [ ] Not Started
+Status: [x] Done
 
 **Goal:** Planner data participates in account reset; edge cases handled.
 

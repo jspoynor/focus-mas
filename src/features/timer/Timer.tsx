@@ -1,12 +1,11 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { breakMinutes } from '../../lib/breakDuration'
 import { formatCountdown } from '../../lib/formatCountdown'
+import { appendFocusSnapshot, removeFocusSnapshot } from '../../lib/plannerDays'
 import { playSessionCompleteCue } from '../../lib/sessionAudio'
 import { completeSession, createSessionRef } from '../../lib/sessions'
+import { useAppStore, type TimerMode } from '../../store/useAppStore'
 import type { PendingSurveySession } from '../survey/PostSessionSurvey'
-import { useAppStore } from '../../store/useAppStore'
-
-type TimerMode = 'idle' | 'focus' | 'break'
 
 const DEFAULT_STAGE_MINUTES = 25
 
@@ -25,6 +24,8 @@ interface TimerProps {
   onBreakStarted?: () => void
   /** When set, focus sessions run for this many seconds instead of stage minutes. */
   shortDurationSeconds?: number | null
+  /** Fired when the timer returns to the ready idle state after survey + break (or skip break). */
+  onReturnToReady?: () => void
 }
 
 export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
@@ -35,12 +36,14 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
     breakDurationMinutes = null,
     onBreakStarted,
     shortDurationSeconds = null,
+    onReturnToReady,
   },
   ref,
 ) {
   const userId = useAppStore((s) => s.userId)
   const progress = useAppStore((s) => s.progress)
   const setActiveSessionId = useAppStore((s) => s.setActiveSessionId)
+  const setTimerMode = useAppStore((s) => s.setTimerMode)
 
   const [mode, setMode] = useState<TimerMode>('idle')
   const [remainingSeconds, setRemainingSeconds] = useState(0)
@@ -53,6 +56,7 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
   const modeRef = useRef<TimerMode>('idle')
   const focusDurationRef = useRef(DEFAULT_STAGE_MINUTES)
   const onFocusCompleteRef = useRef(onFocusComplete)
+  const onReturnToReadyRef = useRef(onReturnToReady)
   const modeListenersRef = useRef(new Set<() => void>())
 
   const stageMinutes = progress?.currentStageMinutes ?? DEFAULT_STAGE_MINUTES
@@ -60,6 +64,7 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
   modeRef.current = mode
   focusDurationRef.current = focusDurationMinutes
   onFocusCompleteRef.current = onFocusComplete
+  onReturnToReadyRef.current = onReturnToReady
 
   const clearTick = useCallback(() => {
     if (tickRef.current !== null) {
@@ -68,15 +73,21 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
     }
   }, [])
 
-  const resetToIdle = useCallback(() => {
-    clearTick()
-    endTimeRef.current = null
-    sessionIdRef.current = null
-    sessionStartedAtRef.current = null
-    setActiveSessionId(null)
-    setMode('idle')
-    setRemainingSeconds(0)
-  }, [clearTick, setActiveSessionId])
+  const resetToIdle = useCallback(
+    (options?: { notifyReady?: boolean }) => {
+      clearTick()
+      endTimeRef.current = null
+      sessionIdRef.current = null
+      sessionStartedAtRef.current = null
+      setActiveSessionId(null)
+      setMode('idle')
+      setRemainingSeconds(0)
+      if (options?.notifyReady) {
+        onReturnToReadyRef.current?.()
+      }
+    },
+    [clearTick, setActiveSessionId],
+  )
 
   const startBreak = useCallback(
     (completedFocusMinutes: number) => {
@@ -148,6 +159,7 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
         endTimeRef.current = null
         setMode('idle')
         setRemainingSeconds(0)
+        onReturnToReadyRef.current?.()
       }
     }, 200)
   }, [clearTick, handleFocusComplete])
@@ -167,10 +179,11 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
   useEffect(() => () => clearTick(), [clearTick])
 
   useEffect(() => {
+    setTimerMode(mode)
     for (const listener of modeListenersRef.current) {
       listener()
     }
-  }, [mode])
+  }, [mode, setTimerMode])
 
   useImperativeHandle(
     ref,
@@ -183,7 +196,7 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
       },
       skipBreak: () => {
         if (modeRef.current !== 'break') return
-        resetToIdle()
+        resetToIdle({ notifyReady: true })
       },
       getMode: () => modeRef.current,
       subscribeToModeChange: (listener: () => void) => {
@@ -202,11 +215,34 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
     const duration = stageMinutes
     const timerSeconds = shortDurationSeconds ?? duration * 60
     const sessionRef = createSessionRef(userId)
+    const startedAt = new Date()
 
     sessionIdRef.current = sessionRef.id
-    sessionStartedAtRef.current = new Date()
+    sessionStartedAtRef.current = startedAt
     setFocusDurationMinutes(duration)
     setActiveSessionId(sessionRef.id)
+
+    const {
+      focusPlanDraft,
+      liveDateKey,
+      plannerViewMode,
+      recordFocusSessionStart,
+    } = useAppStore.getState()
+
+    if (plannerViewMode === 'live') {
+      recordFocusSessionStart({
+        sessionId: sessionRef.id,
+        planText: focusPlanDraft,
+        startedAt: startedAt.toISOString(),
+      })
+      void appendFocusSnapshot(userId, liveDateKey, {
+        sessionId: sessionRef.id,
+        planText: focusPlanDraft,
+        startedAt,
+      }).catch((err) => {
+        console.warn('[planner] Failed to save focus snapshot:', err)
+      })
+    }
 
     endTimeRef.current = Date.now() + timerSeconds * 1000
     setMode('focus')
@@ -214,7 +250,24 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
   }
 
   function handleStop() {
-    resetToIdle()
+    if (modeRef.current === 'focus') {
+      const sessionId = sessionIdRef.current
+      if (userId && sessionId) {
+        const { liveDateKey, plannerViewMode, recordFocusSessionStop } = useAppStore.getState()
+        if (plannerViewMode === 'live') {
+          recordFocusSessionStop(sessionId)
+          void removeFocusSnapshot(userId, liveDateKey, sessionId).catch((err) => {
+            console.warn('[planner] Failed to remove focus snapshot:', err)
+          })
+        }
+      }
+      resetToIdle()
+      return
+    }
+
+    if (modeRef.current === 'break') {
+      resetToIdle({ notifyReady: true })
+    }
   }
 
   const isRunning = mode === 'focus' || mode === 'break'

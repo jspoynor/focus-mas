@@ -120,7 +120,7 @@ function DevToolbarDock() {
                   onClick={() => session?.submitSurvey(true)}
                   className="glass-btn rounded-glass px-2.5 py-1 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Clean
+                  Uninterrupted
                 </button>
                 <button
                   type="button"
@@ -128,7 +128,7 @@ function DevToolbarDock() {
                   onClick={() => session?.submitSurvey(false)}
                   className="glass-btn rounded-glass px-2.5 py-1 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Distracted
+                  Interrupted
                 </button>
               </div>
             </section>

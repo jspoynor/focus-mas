@@ -13,6 +13,8 @@ export function useUserData() {
       setProgress,
       setSessions,
       setPendingStepBackTargetMinutes,
+      hydrateLivePlannerDay,
+      resetPlannerState,
     } = useAppStore.getState()
 
     if (authStatus !== 'signed-in' || !userId) {
@@ -20,6 +22,7 @@ export function useUserData() {
       setProgress(null)
       setSessions([])
       setPendingStepBackTargetMinutes(null)
+      resetPlannerState()
       return
     }
 
@@ -27,10 +30,11 @@ export function useUserData() {
     setUserDataStatus('loading')
 
     void loadUserData(userId)
-      .then(({ progress, sessions }) => {
+      .then(({ progress, sessions, plannerDay }) => {
         if (cancelled) return
         setProgress(progress)
         setSessions(sessions)
+        hydrateLivePlannerDay(plannerDay)
         setUserDataStatus('ready')
       })
       .catch((err) => {
@@ -39,6 +43,7 @@ export function useUserData() {
         const fallback = defaultUserDataFallback()
         setProgress(fallback.progress)
         setSessions(fallback.sessions)
+        hydrateLivePlannerDay(fallback.plannerDay)
         setUserDataStatus('ready')
       })
 

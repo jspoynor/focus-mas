@@ -7,6 +7,16 @@ export function toDateKey(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
+export function dateFromDateKey(dateKey: string): Date {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+/** True when the calendar day is today or in the past (planner snapshot eligible). */
+export function isPlannerSnapshotEligible(date: Date, today: Date): boolean {
+  return toDateKey(date) <= toDateKey(today)
+}
+
 export interface DaySessionStats {
   dateKey: string
   date: Date
@@ -141,5 +151,5 @@ export function formatSessionAnswer(value: boolean): string {
 }
 
 export function formatSessionTooltipLine(session: FocusSession): string {
-  return `${session.durationMinutes} min · distracted: ${formatSessionAnswer(session.q1Distracted ?? false)} · phone: ${formatSessionAnswer(session.q2UsedPhone ?? false)}`
+  return `${session.durationMinutes} min · uninterrupted: ${formatSessionAnswer(!(session.q1Distracted ?? false))} · phone: ${formatSessionAnswer(session.q2UsedPhone ?? false)}`
 }

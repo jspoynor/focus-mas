@@ -2,9 +2,11 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import {
   buildCalendarMonths,
   groupSessionsByDay,
+  isPlannerSnapshotEligible,
   isSameDay,
   toDateKey,
 } from '../../lib/calendarGrid'
+import { usePlannerSnapshot } from '../../hooks/usePlannerSnapshot'
 import { surveyCompleteSessions } from '../../lib/mastery'
 import {
   computeProjectedAdvancementDate,
@@ -24,6 +26,7 @@ const SCROLL_EDGE_MARGIN = '120px 0px'
 export function ContributionCalendar() {
   const sessions = useAppStore((s) => s.sessions)
   const progress = useAppStore((s) => s.progress)
+  const { openSnapshot } = usePlannerSnapshot()
   const scrollRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const bottomSentinelRef = useRef<HTMLDivElement>(null)
@@ -135,12 +138,6 @@ export function ContributionCalendar() {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
         <MasteryStage />
 
-        {calendar.projectedLabel ? (
-          <p className="shrink-0 text-[10px] leading-relaxed text-white/50">
-            {calendar.projectedLabel}
-          </p>
-        ) : null}
-
         <div className="grid shrink-0 grid-cols-7 gap-1 text-[10px] text-white/40">
           {WEEKDAY_LABELS.map((weekday) => (
             <div key={weekday} className="text-center">
@@ -180,6 +177,7 @@ export function ContributionCalendar() {
 
                         const dateKey = toDateKey(day)
                         const daySessions = calendar.sessionsByDay.get(dateKey) ?? []
+                        const isPlannerClickable = isPlannerSnapshotEligible(day, calendar.today)
 
                         return (
                           <CalendarDayCell
@@ -189,6 +187,10 @@ export function ContributionCalendar() {
                             isToday={isSameDay(day, calendar.today)}
                             isProjectedDate={calendar.projectedKey === dateKey}
                             projectedDateLabel={calendar.projectedLabel}
+                            isPlannerClickable={isPlannerClickable}
+                            onPlannerDayClick={(clickedDateKey) => {
+                              void openSnapshot(clickedDateKey)
+                            }}
                           />
                         )
                       }),
