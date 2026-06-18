@@ -25,7 +25,7 @@ export function SignInScreen() {
         <h1 className="mt-2 text-3xl font-semibold text-white">Focus Mastery</h1>
         <p className="mt-4 text-sm leading-relaxed text-white/75">
           Focus Mastery trains your attention span one session at a time. Complete
-          distraction-free sessions to prove you&apos;ve mastered your current focus
+          uninterrupted sessions to prove you&apos;ve mastered your current focus
           length — then grow into longer ones.
         </p>
 

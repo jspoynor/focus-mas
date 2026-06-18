@@ -17,6 +17,8 @@ interface CalendarDayCellProps {
   isToday: boolean
   isProjectedDate: boolean
   projectedDateLabel: string | null
+  isPlannerClickable: boolean
+  onPlannerDayClick?: (dateKey: string) => void
 }
 
 export function CalendarDayCell({
@@ -25,6 +27,8 @@ export function CalendarDayCell({
   isToday,
   isProjectedDate,
   projectedDateLabel,
+  isPlannerClickable,
+  onPlannerDayClick,
 }: CalendarDayCellProps) {
   const cellRef = useRef<HTMLDivElement>(null)
   const [tooltipOpen, setTooltipOpen] = useState(false)
@@ -36,7 +40,8 @@ export function CalendarDayCell({
     stats.longestDurationMinutes !== null && stats.cleanRate !== null
       ? getCalendarCellFill(stats.longestDurationMinutes, stats.cleanRate)
       : undefined
-  const isFocusable = hasSessions || isToday || isProjectedDate
+  const isFocusable = hasSessions || isToday || isProjectedDate || isPlannerClickable
+  const dateKey = toDateKey(date)
   const summaryLine = formatDaySummaryLine(stats)
 
   const markerText = isToday
@@ -79,11 +84,18 @@ export function CalendarDayCell({
           type="button"
           className={`${cellSurfaceClassName} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-inset`}
           style={cellStyle}
-          aria-label={buildAriaLabel(date, stats, isToday, isProjectedDate)}
+          aria-label={buildAriaLabel(date, stats, isToday, isProjectedDate, isPlannerClickable)}
           aria-describedby={
             [markerText ? markerTooltipId : null, hasSessions ? tooltipId : null]
               .filter(Boolean)
               .join(' ') || undefined
+          }
+          onClick={
+            isPlannerClickable
+              ? () => {
+                  onPlannerDayClick?.(dateKey)
+                }
+              : undefined
           }
         />
       ) : (
@@ -143,6 +155,7 @@ function buildAriaLabel(
   stats: DaySessionStats,
   isToday: boolean,
   isProjectedDate: boolean,
+  isPlannerClickable: boolean,
 ): string {
   const dateLabel = date.toLocaleDateString(undefined, {
     month: 'short',
@@ -151,6 +164,7 @@ function buildAriaLabel(
   const markers = [
     isToday ? 'today' : null,
     isProjectedDate ? 'projected advancement date' : null,
+    isPlannerClickable ? 'open planner snapshot' : null,
   ].filter(Boolean)
 
   if (!stats.completedCount) {

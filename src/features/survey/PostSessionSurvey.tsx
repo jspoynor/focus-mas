@@ -89,9 +89,9 @@ export function PostSessionSurvey({
       <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
         <YesNoButtons
           name="q1"
-          label="Did you get distracted?"
-          value={q1Distracted}
-          onChange={setQ1Distracted}
+          label="Was your focus uninterrupted?"
+          value={q1Distracted === null ? null : !q1Distracted}
+          onChange={(uninterrupted) => setQ1Distracted(!uninterrupted)}
         />
         <YesNoButtons
           name="q2"

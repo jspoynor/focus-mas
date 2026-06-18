@@ -36,24 +36,38 @@ Copy `.env.example` to `.env.local` (gitignored). Required keys:
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Messaging sender ID |
 | `VITE_FIREBASE_APP_ID` | App ID |
 
+## Daily planner
+
+The left panel is a two-section daily planner synced to Firestore (`users/{uid}/plannerDays/{YYYY-MM-DD}`):
+
+- **Day plan** — freeform notes for the day. Auto-saves ~2 seconds after you stop typing (live today only).
+- **Focus session** — plan for the next focus block. Snapshotted to Firestore when you press **Start focus**; cleared after survey + break when the timer returns to idle.
+
+**Focus arrows** browse today's saved focus snapshots (read-only) plus an editable draft on the last page. **Stop session** removes the in-flight snapshot and restores your draft text.
+
+Click a **today or past** calendar cell to open **snapshot mode** (read-only replay). The header shows `Snapshot · [date]` with **Return to today** to resume live editing.
+
+At local midnight the day plan rolls over to a fresh today doc. If you're viewing a snapshot when midnight passes, the left panel stays on that date until you return to today.
+
+Planner writes use the same Firestore offline cache as sessions — queued while offline and synced on reconnect.
+
 ## Project structure
 
 ```
 src/
   components/       # Shared layout shell
   features/
-    timer/          # Pomodoro timer (stub)
-    survey/         # Post-session survey (stub)
-    calendar/       # Contribution calendar (stub)
-    mastery/        # Progression engine (stub)
+    planner/        # Daily planner panel
+    timer/          # Pomodoro timer
+    survey/         # Post-session survey
+    calendar/       # Contribution calendar
+    mastery/        # Progression engine
   store/            # Zustand app store
-  lib/              # Firebase client
-  types/            # Provisional Firestore types
+  lib/              # Firebase client, planner helpers
+  types/            # Firestore types
 ```
 
-## Build-out
-
-Feature logic, `specs.md`, and `roadmap.md` are **not** part of this scaffold. They are produced in a later **grill-me** session in Claude Code and subsequent build phases. See `PROJECT_BRIEF.md` for concept and open design questions.
+Product spec: `specs.md`. Build sequencing: `roadmap.md`.
 
 ## Scripts
 
@@ -61,4 +75,5 @@ Feature logic, `specs.md`, and `roadmap.md` are **not** part of this scaffold. T
 |---------|-------------|
 | `npm run dev` | Start dev server |
 | `npm run build` | Typecheck + production build |
+| `npm test` | Run unit tests |
 | `npm run preview` | Preview production build |

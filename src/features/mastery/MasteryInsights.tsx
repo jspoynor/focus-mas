@@ -20,7 +20,7 @@ export function MasteryStage() {
 
   return (
     <div className="shrink-0">
-      <p className="text-[10px] uppercase tracking-widest text-white/40">Stage</p>
+      <p className="text-[10px] uppercase tracking-widest text-white/40">Mastery level</p>
       <p
         className="text-xl font-light transition-colors duration-500"
         style={{ color: stageColor }}
@@ -96,32 +96,28 @@ export function MasteryDetails() {
             />
           </div>
         </div>
-      ) : (
-        <div className="flex items-baseline justify-between gap-2">
+      ) : null}
+
+      {mastery.window.isFull ? (
+        <div className="space-y-1">
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-white/40">Clean rate</p>
+            <p className="text-[10px] uppercase tracking-widest text-white/40">Uninterrupted rate</p>
             <p className="text-lg font-light text-white">
               {formatMasteryPercent(mastery.window.cleanRate)}
             </p>
           </div>
-          <p className="text-[10px] text-white/50">
-            {mastery.window.cleanCount}/{mastery.window.sessionCount} sessions
+          <p
+            className={
+              mastery.window.cleanRate >= ADVANCEMENT_THRESHOLD
+                ? 'text-[10px] text-emerald-300/80'
+                : 'text-[10px] text-white/40'
+            }
+          >
+            {mastery.window.cleanRate >= ADVANCEMENT_THRESHOLD
+              ? `Above ${thresholdPercent}% — advancing when window stays full`
+              : `${thresholdPercent}% needed to advance`}
           </p>
         </div>
-      )}
-
-      {mastery.window.isFull ? (
-        <p
-          className={
-            mastery.window.cleanRate >= ADVANCEMENT_THRESHOLD
-              ? 'text-[10px] text-emerald-300/80'
-              : 'text-[10px] text-white/40'
-          }
-        >
-          {mastery.window.cleanRate >= ADVANCEMENT_THRESHOLD
-            ? `Above ${thresholdPercent}% — advancing when window stays full`
-            : `${thresholdPercent}% needed to advance`}
-        </p>
       ) : null}
 
       {pendingStepBackTargetMinutes !== null ? (

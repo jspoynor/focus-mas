@@ -1,142 +1,171 @@
-# Focus Mastery — Admin Panel Roadmap
+# Focus Mastery — Daily Planner Roadmap
 
-Dev-only tooling so product flows can be tested without waiting 25 minutes per session or hand-grinding 300 minutes of history. Each phase is a vertical slice: shippable, testable, and builds on the previous phase.
+Left-panel planner: day notes + per-session focus plans, persisted in Firestore and browsable via the calendar. Each phase is a vertical slice — shippable, testable, and builds on the previous phase.
 
 **Design decisions (locked):**
 
 | Decision | Choice |
 |----------|--------|
-| Hosting | Dev-only, local (`npm run dev`) — never ships in production |
-| Surface area | Inline dev toolbar on main app **and** `/admin` page (toolbar first) |
-| Timer shortcuts | Instant complete + short-duration mode |
-| Survey / break | Quick-submit Clean / Distracted + skip break |
-| `/admin` scope | Reset, progress editor, session seeder, scenario presets |
-| Gating | `import.meta.env.DEV` **and** `VITE_DEV_TOOLS=true` in `.env.local` |
-| Data target | Same Google account, same Firestore project (real data) |
-| Preset behavior | Reset-then-seed (predictable state every time) |
-| Toolbar UX | `` ` `` keyboard toggle → floating panel (bottom-right) |
-| Confirmations | Single-click modal with action summary (session count, fields changed) |
-| Short duration | Configurable in toolbar; default **10 seconds** |
-| Scenario presets (v1) | Cold start, Almost advancing, Below threshold, Step-back ready, Calendar month |
+| Layout | Left panel split **5/8** Day plan · **3/8** Focus session |
+| Section headers | **Day plan** / **Focus session** |
+| Day boundary | Completes at **local midnight**; immediate UI rollover when date changes |
+| Day plan save | Debounced auto-save (~2 s after typing stops) |
+| Focus plan save | Snapshot on **Start focus**, linked to `sessionId` |
+| Focus clear | Clears when timer returns to **idle** (after survey + break) |
+| Stop session | Remove snapshot for that attempt; **restore** draft text |
+| During session | Day plan editable; focus section **locked** until idle |
+| Focus arrows (live) | Draft is the **last page** (`1 … N` snapshots, `N+1` = next draft) |
+| Calendar click | Today + past only → **snapshot mode** (read-only full replay) |
+| Empty snapshot | Open with placeholders (*"No day plan recorded"*, *"No focus plans recorded"*) |
+| Snapshot header | `Snapshot · [long date]` + **Return to today** in app header |
+| Dev reset | Deletes sessions, progress, **and** all `plannerDays` |
+
+Full product spec: `specs.md` §6.5, §7.2, §8.2.
 
 ---
 
-## Phase 1 — Dev gate + routing shell
+## Phase 1 — Data layer + types
 Status: [x] Done
 
-**Goal:** Dev tools are opt-in, stripped from production builds, and `/admin` is reachable in dev without touching product UI yet.
+**Goal:** Firestore schema and client helpers exist; no UI yet.
 
 **Deliverables:**
-- `VITE_DEV_TOOLS` env flag documented in `.env.example`; dev tools inactive unless `import.meta.env.DEV && import.meta.env.VITE_DEV_TOOLS === 'true'`
-- `src/dev/isDevToolsEnabled.ts` — single gate used by all dev code
-- Lightweight routing in `App.tsx` (pathname check or minimal router): `/admin` renders admin shell; all other paths unchanged
-- Admin route + all `src/dev/**` imports wrapped so Vite tree-shakes them from `npm run build` output
-- `/admin` placeholder page: "Dev tools" heading, signed-in UID display, link back to main app
-- Main app unchanged when `VITE_DEV_TOOLS` is unset or false
+- `PlannerDay` and `FocusPlanSnapshot` types in `src/types/`
+- `src/lib/plannerDays.ts`:
+  - `plannerDayRef(userId, dateKey)` — `users/{uid}/plannerDays/{YYYY-MM-DD}`
+  - `loadPlannerDay(userId, dateKey)` — returns doc or defaults
+  - `saveDayPlan(userId, dateKey, dayPlan)` — merge write with `updatedAt`
+  - `appendFocusSnapshot(userId, dateKey, { sessionId, planText, startedAt })`
+  - `removeFocusSnapshot(userId, dateKey, sessionId)` — for abandoned sessions
+  - `deleteAllPlannerDays(userId)` — batch delete for dev reset
+- `toDateKey` reused from `calendarGrid` for local date keys
+- Unit-testable pure helpers for arrow page math (live vs snapshot mode)
 
-**Dependencies:** Existing auth + Firebase client.
+**Dependencies:** Existing Firebase client + auth.
 
 ---
 
-## Phase 2 — Inline dev toolbar
+## Phase 2 — Planner panel shell
 Status: [x] Done
 
-**Goal:** Toggle a floating dev panel on the main three-column layout and shortcut the timer → survey → break loop without leaving the real UI.
+**Goal:** Left panel shows the two-section layout with local state only (no Firestore yet).
 
 **Deliverables:**
-- `` ` `` keyboard listener (dev-only) toggles floating panel; panel hidden by default
-- Floating panel (bottom-right): collapsible, unobtrusive, does not affect three-column layout
-- **Complete now** — ends active focus session via real completion path (`handleFocusComplete` → Firestore write → survey)
-- **Short duration mode** — toggle + seconds input (default 10); overrides focus duration for next session start only; reads real `currentStageMinutes` when off
-- **Clean** / **Distracted** — visible while survey is open; submits real survey answers through existing `updateSessionSurvey` + `runMasteryEngineAfterSession`
-- **Skip break** — visible while break timer runs; returns to idle without waiting
-- Toolbar actions that mutate nothing (complete, skip break, survey submit) require no confirm dialog
-- Timer exposes dev hooks via ref/callback/context — no duplicate Firestore write paths
+- `src/features/planner/PlannerPanel.tsx` — replaces empty `LeftPanel` content
+- Vertical flex split: top `flex-[5]`, bottom `flex-[3]`, both `min-h-0`
+- Section headers: **Day plan**, **Focus session** with `‹` / `›` arrow buttons flanking focus header
+- Glass-styled `<textarea>` in each section; placeholder copy for empty fields
+- Zustand slice or planner context: `dayPlanDraft`, `focusPlanDraft`, `focusPageIndex`
+- Wire into existing `LeftPanel` glass card
 
-**Dependencies:** Phase 1 complete.
+**Dependencies:** Phase 1 types (optional for shell-only; required before Phase 3).
 
 ---
 
-## Phase 3 — `/admin` reset + progress editor
+## Phase 3 — Day plan persistence
 Status: [x] Done
 
-**Goal:** Full account wipe and manual progress editing from `/admin`, with clear summaries before destructive actions.
+**Goal:** Day plan loads on sign-in and auto-saves to Firestore.
 
 **Deliverables:**
-- **Reset account** button: deletes all `users/{uid}/sessions/*`, resets `users/{uid}/progress` to defaults (`currentStageMinutes: 25`, nulls on optional fields)
-- Single-click confirm modal shows: session count to delete, progress fields to reset
-- After reset, Zustand store refreshes (re-fetch sessions + progress or trigger existing sync hook)
-- **Progress editor** form for `currentStageMinutes`, `prevMasteryPercent`, `lastProgressionAt`, `stepBackOfferedAt` — save writes to Firestore via existing `saveUserProgress`
-- Read-only summary: current rolling window stats (total min, clean rate, is full) computed from live session data
-- Link from `/admin` to main app; dev toolbar still available on main app
+- On user data load, fetch today's `plannerDays/{dateKey}` into store
+- Debounced save (~2 s) on day plan edits in live today mode
+- Skip writes in snapshot mode (read-only)
+- Subtle save indicator optional (e.g. dim "Saved" / offline queue reuse from existing sync patterns)
+- Midnight rollover listener: on local date change, clear day plan draft and load new empty today doc
 
-**Dependencies:** Phase 1 complete. Can ship in parallel with Phase 2 but listed after Phase 2 in build order.
+**Dependencies:** Phase 1, Phase 2.
 
 ---
 
-## Phase 4 — Session seeder + scenario presets
-Status: [ ] Not started
+## Phase 4 — Focus plan + timer integration
+Status: [x] Done
 
-**Goal:** One-click predictable test states. Every preset resets first, then seeds — no partial/ambiguous window math.
+**Goal:** Focus plan snapshots on Start focus and follows the session lifecycle.
 
 **Deliverables:**
-- `src/dev/seedSessions.ts` — creates completed session documents with correct fields (`durationMinutes`, `completedAt`, `q1Distracted`, `q2UsedPhone`, `distracted`, `startedAt`)
-- Generic seeder controls: session count, duration, clean/distracted ratio, spread across N days (for manual experiments)
-- Preset buttons (each runs reset-then-seed with single-click confirm showing exact plan):
+- Hook into `Timer` `handleStartFocus`: before timer starts, call `appendFocusSnapshot` with current focus draft + new `sessionId`
+- Lock focus textarea when mode ≠ idle; day plan stays editable
+- On return to idle (survey done + break ended/skipped): clear focus draft, reset to last arrow page (new empty draft)
+- On **Stop session**: call `removeFocusSnapshot` for in-flight `sessionId`, restore text to focus textarea, unlock editing
+- Timer exposes idle-transition callback or reuse existing mode subscription from dev toolbar pattern
 
-| Preset | After reset, seeds… |
-|--------|---------------------|
-| **Cold start** | Nothing — default progress only |
-| **Almost advancing** | 12 × 25 min clean (full 300 min window, 100% clean); next session should advance to 30 min |
-| **Below threshold** | Full 300 min window at ~70% clean; tests projected date, no advancement |
-| **Step-back ready** | Stage 35 min, `prevMasteryPercent: 0.55`, window ~45% clean; next distracted session triggers step-back offer |
-| **Calendar month** | ~30 days of mixed clean/distracted sessions for belt colors and day tooltips |
-
-- `completedAt` timestamps backdated realistically (spread across days for calendar preset)
-- After seed, re-run mastery engine or refresh store so left panel + calendar reflect new state immediately
-
-**Dependencies:** Phase 3 complete (reset logic reused by presets).
+**Dependencies:** Phase 1–3.
 
 ---
 
-## Phase 5 — Polish + safety pass
-Status: [ ] Not started
+## Phase 5 — Focus session arrows
+Status: [x] Done
 
-**Goal:** Dev tooling feels reliable during daily use on real data; edge cases handled.
+**Goal:** Browse today's focus snapshots; draft is always the last page.
 
 **Deliverables:**
-- Confirm modals always show live counts ("Delete **N** of your sessions…") — never hardcoded
-- Disable dev actions while Firestore writes in flight; show loading on preset buttons
-- Dev toolbar: indicate short-duration mode active (visual badge)
-- Dev toolbar: disable "Complete now" when no active focus session; disable survey buttons when survey not visible
-- `/admin` accessible only when signed in (redirect to sign-in or show message)
-- README section: how to enable dev tools, toolbar shortcuts, preset descriptions, warning about real data
-- Verify `npm run build` output contains no dev route strings or admin bundle (spot-check dist/)
+- Arrow buttons disabled at bounds
+- Live mode paging: pages `1…N` = snapshots (read-only), page `N+1` = editable draft
+- Header label: `Focus session · K of M` (`M = N + 1` in live mode)
+- Textarea content switches between snapshot text and live draft based on page index
+- After idle clear, auto-navigate to last page (draft)
 
-**Dependencies:** Phases 1–4 complete.
+**Dependencies:** Phase 4.
+
+---
+
+## Phase 6 — Calendar snapshot mode
+Status: [x] Done
+
+**Goal:** Click today or past calendar cells to replay archived planner data.
+
+**Deliverables:**
+- `CalendarDayCell`: click handler for today + past dates (future cells unchanged)
+- Planner store: `snapshotDateKey: string | null` — `null` = live today
+- Snapshot mode: load `plannerDays/{dateKey}`, both sections read-only
+- Placeholders when `dayPlan` or `focusSessions` empty
+- Focus arrows: snapshots only (`M = N`, no draft page); disabled when `N = 0`
+- `AppLayout` header:
+  - Live: today's date (current behavior)
+  - Snapshot: `Snapshot · [long date with ordinal]` + **Return to today** button
+- **Return to today** clears `snapshotDateKey`, restores live drafts from Firestore
+
+**Dependencies:** Phase 1–5.
+
+---
+
+## Phase 7 — Dev reset + polish
+Status: [x] Done
+
+**Goal:** Planner data participates in account reset; edge cases handled.
+
+**Deliverables:**
+- Extend `resetUserAccount` to delete all `plannerDays` documents
+- `/admin` confirm modal mentions planner day count
+- Verify offline: day-plan debounce queues; focus snapshot queues on Start focus
+- Disable planner edits while `userDataStatus === 'loading'`
+- Verify midnight rollover while in snapshot mode (left panel unchanged until Return to today)
+- README note: planner behavior summary
+
+**Dependencies:** Phases 1–6.
 
 ---
 
 ## Dependency order
 
 ```
-Phase 1 (Dev gate + routing)
-    ├── Phase 2 (Inline dev toolbar)     ← build first for daily use
-    └── Phase 3 (Reset + progress editor)
-            └── Phase 4 (Seeder + presets)
-                    └── Phase 5 (Polish)
+Phase 1 (Data layer)
+    └── Phase 2 (Panel shell)
+            └── Phase 3 (Day plan persistence)
+                    └── Phase 4 (Focus + timer)
+                            └── Phase 5 (Arrows)
+                                    └── Phase 6 (Calendar snapshot)
+                                            └── Phase 7 (Reset + polish)
 ```
-
-Phase 2 and Phase 3 can be built in parallel after Phase 1; Phase 2 is prioritized because it unblocks timer/survey/break flow testing immediately.
 
 ---
 
 ## Out of scope (v1)
 
-- Production-accessible admin (secret URL, deployed dev tools)
-- Separate Firebase dev project / emulator
-- Cross-user or multi-tenant admin
-- Speed multiplier on running timer
-- Additive-only presets (merge with existing sessions)
-- Typed `RESET` confirm (single-click chosen; revisit if misclicks become a problem)
-- Scenario presets: Partial window, Mid ladder (deferred — covered by inline toolbar + progress editor)
+- Rich text / markdown in planner fields
+- Future-date pre-planning (calendar click on future days)
+- Planner search across days
+- Separate Firebase collection per focus snapshot (embedded array chosen)
+- Export / print planner notes
+- Collaborative or shared planners
