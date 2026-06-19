@@ -145,8 +145,8 @@ export function PlannerPanel() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4">
-      <section className="flex min-h-0 flex-[5] flex-col gap-2" aria-label="Day plan">
+    <div className="planner-panel flex flex-col gap-4">
+      <section className="planner-panel__day-plan flex flex-col gap-2" aria-label="Day plan">
         <div className="flex shrink-0 items-baseline justify-between gap-2">
           <h2
             ref={dayPlanHeaderRef}
@@ -191,7 +191,7 @@ export function PlannerPanel() {
         />
       </section>
 
-      <section className="flex min-h-0 flex-[3] flex-col gap-2" aria-label="Focus session plan">
+      <section className="planner-panel__focus flex flex-col gap-2" aria-label="Focus session plan">
         <div className="grid shrink-0 grid-cols-[2rem_1fr_2rem] items-center gap-1">
           <button
             type="button"
