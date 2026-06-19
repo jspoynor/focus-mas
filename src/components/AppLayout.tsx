@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import { useId, useRef, useState, type ReactNode } from 'react'
+import { FloatingTooltip } from './FloatingTooltip'
 import { dateFromDateKey } from '../lib/calendarGrid'
 import { signOut } from '../lib/auth'
 import { formatLongDateWithOrdinal } from '../lib/formatDate'
@@ -11,6 +12,9 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children, onCycleWallpaper }: AppLayoutProps) {
+  const wallpaperButtonRef = useRef<HTMLButtonElement>(null)
+  const [wallpaperTooltipOpen, setWallpaperTooltipOpen] = useState(false)
+  const wallpaperTooltipId = useId()
   const displayName = useAppStore((s) => s.displayName)
   const snapshotDateKey = useAppStore((s) => s.snapshotDateKey)
   const { returnToToday } = usePlannerSnapshot()
@@ -52,15 +56,29 @@ export function AppLayout({ children, onCycleWallpaper }: AppLayoutProps) {
             <span className="text-xs tracking-widest text-white/50">{displayName}</span>
           ) : null}
           {onCycleWallpaper ? (
-            <button
-              type="button"
-              onClick={onCycleWallpaper}
-              className="rounded-glass px-3 py-1.5 text-xs uppercase tracking-widest text-white/40 transition-colors hover:text-white/70"
-              aria-label="Cycle wallpaper"
-              title="Cycle wallpaper"
-            >
-              Cycle
-            </button>
+            <>
+              <button
+                ref={wallpaperButtonRef}
+                type="button"
+                onClick={onCycleWallpaper}
+                className="rounded-glass px-3 py-1.5 text-xs uppercase tracking-widest text-white/40 transition-colors hover:text-white/70"
+                aria-label="Cycle wallpaper"
+                aria-describedby={wallpaperTooltipOpen ? wallpaperTooltipId : undefined}
+                onMouseEnter={() => setWallpaperTooltipOpen(true)}
+                onMouseLeave={() => setWallpaperTooltipOpen(false)}
+                onFocus={() => setWallpaperTooltipOpen(true)}
+                onBlur={() => setWallpaperTooltipOpen(false)}
+              >
+                Cycle
+              </button>
+              <FloatingTooltip
+                anchorRef={wallpaperButtonRef}
+                open={wallpaperTooltipOpen}
+                id={wallpaperTooltipId}
+              >
+                Cycle wallpaper
+              </FloatingTooltip>
+            </>
           ) : null}
           <button
             type="button"

@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type FocusEvent } from 'react'
+import { FloatingTooltip } from '../../components/FloatingTooltip'
 import { getCalendarCellFill, TODAY_MARKER_COLOR } from '../../lib/beltColors'
-import { CalendarFloatingTooltip } from './CalendarFloatingTooltip'
 import {
   formatDaySummaryLine,
   formatSessionTooltipLine,
@@ -33,7 +33,6 @@ export function CalendarDayCell({
   const cellRef = useRef<HTMLDivElement>(null)
   const [tooltipOpen, setTooltipOpen] = useState(false)
   const tooltipId = useId()
-  const markerTooltipId = useId()
   const stats: DaySessionStats = getDayStats(date, sessions)
   const hasSessions = stats.completedCount > 0
   const fillColor =
@@ -49,6 +48,8 @@ export function CalendarDayCell({
     : isProjectedDate && projectedDateLabel
       ? projectedDateLabel
       : null
+
+  const hasTooltipContent = markerText !== null || hasSessions
 
   const cellStyle = {
     ...(fillColor ? { backgroundColor: fillColor } : {}),
@@ -85,11 +86,7 @@ export function CalendarDayCell({
           className={`${cellSurfaceClassName} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-inset`}
           style={cellStyle}
           aria-label={buildAriaLabel(date, stats, isToday, isProjectedDate, isPlannerClickable)}
-          aria-describedby={
-            [markerText ? markerTooltipId : null, hasSessions ? tooltipId : null]
-              .filter(Boolean)
-              .join(' ') || undefined
-          }
+          aria-describedby={hasTooltipContent && tooltipOpen ? tooltipId : undefined}
           onClick={
             isPlannerClickable
               ? () => {
@@ -102,39 +99,36 @@ export function CalendarDayCell({
         <div className={cellSurfaceClassName} style={cellStyle} aria-hidden="true" />
       )}
 
-      {markerText ? (
-        <CalendarFloatingTooltip
-          anchorRef={cellRef}
-          open={tooltipOpen}
-          id={markerTooltipId}
-        >
-          {markerText}
-        </CalendarFloatingTooltip>
-      ) : null}
-
-      {hasSessions ? (
-        <CalendarFloatingTooltip
+      {hasTooltipContent ? (
+        <FloatingTooltip
           anchorRef={cellRef}
           open={tooltipOpen}
           id={tooltipId}
           textAlign="left"
         >
-          <p className="font-medium text-white">
-            {date.toLocaleDateString(undefined, {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-            })}
-          </p>
-          {summaryLine ? <p className="mt-1 text-white/75">{summaryLine}</p> : null}
-          <ul className="mt-1 space-y-1">
-            {stats.sessions.map((session) => (
-              <li key={session.id} className="text-white/75">
-                {formatSessionTooltipLine(session)}
-              </li>
-            ))}
-          </ul>
-        </CalendarFloatingTooltip>
+          {markerText ? <p className="font-medium text-white">{markerText}</p> : null}
+          {hasSessions ? (
+            <>
+              {!markerText ? (
+                <p className="font-medium text-white">
+                  {date.toLocaleDateString(undefined, {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </p>
+              ) : null}
+              {summaryLine ? <p className="mt-1 text-white/75">{summaryLine}</p> : null}
+              <ul className="mt-1 space-y-1">
+                {stats.sessions.map((session) => (
+                  <li key={session.id} className="text-white/75">
+                    {formatSessionTooltipLine(session)}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </FloatingTooltip>
       ) : null}
     </div>
   )

@@ -13,7 +13,7 @@ import {
 } from '../../lib/plannerPages'
 import { useFocusPageSync } from '../../hooks/useFocusPageSync'
 import { useAppStore } from '../../store/useAppStore'
-import { CalendarFloatingTooltip } from '../calendar/CalendarFloatingTooltip'
+import { FloatingTooltip } from '../../components/FloatingTooltip'
 import { PlannerMarkdownEditor } from './PlannerMarkdownEditor'
 
 const PLANNER_TEXTAREA_CLASS =
@@ -137,7 +137,7 @@ export function PlannerPanel() {
           >
             Day plan
           </h2>
-          <CalendarFloatingTooltip
+          <FloatingTooltip
             anchorRef={dayPlanHeaderRef}
             open={dayPlanTooltipOpen}
             id={dayPlanTooltipId}
@@ -147,7 +147,7 @@ export function PlannerPanel() {
             <p className="mt-2 text-white/75">
               Tip: use - , 1. , and [ ] commands to organize your plans.
             </p>
-          </CalendarFloatingTooltip>
+          </FloatingTooltip>
           {dayPlanSaveLabel && isLiveMode ? (
             <span className="text-[10px] uppercase tracking-wider text-white/35" aria-live="polite">
               {dayPlanSaveLabel}
