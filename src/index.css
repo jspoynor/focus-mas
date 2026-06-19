@@ -255,166 +255,45 @@
 }
 
 /* Compact layout: timer on top, planner and calendar side-by-side below */
-.app-main {
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
 .app-main-layout {
   display: grid;
-  grid-template-columns:
-    minmax(var(--panel-column-min-width), 1fr)
-    minmax(var(--panel-column-min-width), 1fr);
-  grid-template-rows: auto auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
     "center center"
     "left right";
-  align-items: start;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .app-main-layout__left {
   grid-area: left;
-  min-width: 0;
+  min-height: 0;
 }
 
 .app-main-layout__center {
   grid-area: center;
-  min-width: 0;
+  min-height: 0;
 }
 
 .app-main-layout__right {
   grid-area: right;
-  min-width: 0;
-}
-
-.app-main-layout .side-panel {
-  height: auto;
-  max-height: none;
-  min-height: var(--panel-compact-min-height);
-  min-width: 0;
-  overflow: visible;
-}
-
-.app-main-layout .planner-panel {
   min-height: 0;
 }
 
-.app-main-layout .planner-panel__day-plan,
-.app-main-layout .planner-panel__focus {
-  min-width: 0;
-}
-
-.app-main-layout .planner-panel__day-plan .planner-markdown-editor {
-  min-height: var(--planner-day-plan-min-height);
-}
-
-.app-main-layout .planner-panel__focus .planner-markdown-editor {
-  min-height: var(--planner-focus-min-height);
-}
-
-.app-main-layout .planner-markdown-editor {
-  flex: none;
-  overflow: visible;
-}
-
-.app-main-layout .calendar-panel {
-  min-width: 0;
-}
-
-.app-main-layout .calendar-scroll {
-  flex: none;
-  min-height: var(--calendar-body-min-height);
-  overflow-y: visible;
-}
-
-.app-main-layout .calendar-day-cell {
-  min-width: var(--calendar-day-min-size);
-  min-height: var(--calendar-day-min-size);
-}
-
-.app-main-layout .calendar-panel__weekdays {
-  min-width: calc(var(--calendar-day-min-size) * 7 + 0.375rem * 6);
-}
-
-/* Wide landscape: classic three-column layout with internal panel scroll */
+/* Wide landscape: classic three-column layout */
 @media (min-width: 1024px) and (orientation: landscape) {
-  .app-main {
-    overflow: hidden;
-  }
-
   .app-main-layout {
-    flex: 1;
-    min-height: 0;
-    height: 100%;
     grid-template-columns: minmax(0, 0.48fr) minmax(0, 2.24fr) minmax(0, 0.48fr);
     grid-template-rows: minmax(0, 1fr);
     grid-template-areas: "left center right";
-    align-items: stretch;
-    overflow: hidden;
+    height: 100%;
   }
 
   .app-main-layout__left,
   .app-main-layout__right {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
     padding-top: 1rem;
     padding-bottom: 1rem;
-  }
-
-  .app-main-layout__center {
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
-  .app-main-layout .side-panel {
-    flex: 1;
-    height: 100%;
-    max-height: 100%;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .app-main-layout .planner-panel {
-    flex: 1;
-    min-height: 0;
-  }
-
-  .app-main-layout .planner-panel__day-plan {
-    display: flex;
-    flex: 5 1 0;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .app-main-layout .planner-panel__focus {
-    display: flex;
-    flex: 3 1 0;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .app-main-layout .planner-markdown-editor {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-  }
-
-  .app-main-layout .calendar-panel {
-    flex: 1;
-    min-height: 0;
-  }
-
-  .app-main-layout .calendar-scroll {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-  }
-
-  .app-main-layout .calendar-day-cell {
-    min-width: 0;
-    min-height: 0;
   }
 }
 
@@ -457,12 +336,6 @@
   --cursor-panel-border-core: rgba(255, 255, 255, 0.16);
   --cursor-panel-border-mid: rgba(255, 255, 255, 0.07);
   --cursor-panel-border-glow-width: 1px;
-  --panel-column-min-width: 8.75rem;
-  --panel-compact-min-height: 14rem;
-  --planner-day-plan-min-height: 6.5rem;
-  --planner-focus-min-height: 4.5rem;
-  --calendar-body-min-height: 10rem;
-  --calendar-day-min-size: 1.125rem;
 }
 
 .glass-panel,

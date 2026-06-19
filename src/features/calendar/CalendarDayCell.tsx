@@ -73,7 +73,7 @@ export function CalendarDayCell({
   return (
     <div
       ref={cellRef}
-      className="group calendar-day-cell relative aspect-square min-h-0 min-w-0"
+      className="group relative aspect-square min-h-0 min-w-0"
       data-calendar-day={toDateKey(date)}
       onMouseEnter={showTooltip}
       onMouseLeave={() => setTooltipOpen(false)}

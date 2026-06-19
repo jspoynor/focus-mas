@@ -14,7 +14,6 @@ import {
   projectedDateKey,
 } from '../../lib/projectedDate'
 import { MasteryDetails, MasteryStage } from '../mastery/MasteryInsights'
-import { getPageScrollElement, useWideLandscapeLayout } from '../../hooks/useWideLandscapeLayout'
 import { useAppStore } from '../../store/useAppStore'
 import { CalendarDayCell } from './CalendarDayCell'
 
@@ -25,7 +24,6 @@ const MONTHS_LOAD_CHUNK = 3
 const SCROLL_EDGE_MARGIN = '120px 0px'
 
 export function ContributionCalendar() {
-  const isWideLandscape = useWideLandscapeLayout()
   const sessions = useAppStore((s) => s.sessions)
   const progress = useAppStore((s) => s.progress)
   const { openSnapshot, returnToToday } = usePlannerSnapshot()
@@ -62,7 +60,7 @@ export function ContributionCalendar() {
   const expandPast = useCallback(() => {
     if (isExpandingPastRef.current) return
 
-    const container = isWideLandscape ? scrollRef.current : getPageScrollElement()
+    const container = scrollRef.current
     if (!container) return
 
     isExpandingPastRef.current = true
@@ -71,7 +69,7 @@ export function ContributionCalendar() {
       scrollTop: container.scrollTop,
     }
     setMonthsBefore((count) => count + MONTHS_LOAD_CHUNK)
-  }, [isWideLandscape])
+  }, [])
 
   const expandFuture = useCallback(() => {
     if (isExpandingFutureRef.current) return
@@ -93,7 +91,7 @@ export function ContributionCalendar() {
   )
 
   useLayoutEffect(() => {
-    const container = isWideLandscape ? scrollRef.current : getPageScrollElement()
+    const container = scrollRef.current
     const anchor = prependAnchorRef.current
     if (!container || !anchor) return
 
@@ -101,7 +99,7 @@ export function ContributionCalendar() {
     container.scrollTop = anchor.scrollTop + heightDelta
     prependAnchorRef.current = null
     isExpandingPastRef.current = false
-  }, [monthsBefore, isWideLandscape])
+  }, [monthsBefore])
 
   useLayoutEffect(() => {
     isExpandingFutureRef.current = false
@@ -121,11 +119,10 @@ export function ContributionCalendar() {
   }, [todayKey, calendar.months])
 
   useEffect(() => {
+    const root = scrollRef.current
     const topSentinel = topSentinelRef.current
     const bottomSentinel = bottomSentinelRef.current
-    if (!topSentinel || !bottomSentinel) return
-
-    const root = isWideLandscape ? scrollRef.current : null
+    if (!root || !topSentinel || !bottomSentinel) return
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -142,17 +139,17 @@ export function ContributionCalendar() {
     observer.observe(bottomSentinel)
 
     return () => observer.disconnect()
-  }, [expandPast, expandFuture, calendar.months.length, isWideLandscape])
+  }, [expandPast, expandFuture, calendar.months.length])
 
   return (
     <section
-      className="glass-panel side-panel side-panel--calendar min-w-0 flex-1 rounded-glass-lg p-6"
+      className="glass-panel min-h-0 min-w-0 flex-1 overflow-hidden rounded-glass-lg p-6"
       aria-label="Contribution calendar"
     >
-      <div className="calendar-panel flex min-w-0 flex-1 flex-col gap-3">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
         <MasteryStage />
 
-        <div className="calendar-panel__weekdays grid shrink-0 grid-cols-7 gap-1 text-[10px] text-white/40">
+        <div className="grid shrink-0 grid-cols-7 gap-1 text-[10px] text-white/40">
           {WEEKDAY_LABELS.map((weekday) => (
             <div key={weekday} className="text-center">
               {weekday.charAt(0)}
@@ -162,9 +159,7 @@ export function ContributionCalendar() {
 
         <div
           ref={scrollRef}
-          className={`calendar-scroll mt-1 min-h-0 flex-1 overflow-x-hidden ${
-            isWideLandscape ? 'overflow-y-auto' : 'overflow-y-visible'
-          }`}
+          className="calendar-scroll mt-1 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
         >
           <div className="calendar-scroll-inner flex flex-col gap-4">
             <div ref={topSentinelRef} className="h-px shrink-0" aria-hidden="true" />
@@ -185,7 +180,7 @@ export function ContributionCalendar() {
                           return (
                             <div
                               key={`${month.year}-${month.month}-${weekIndex}-${dayIndex}`}
-                              className="calendar-day-cell aspect-square min-h-0 min-w-0"
+                              className="aspect-square min-h-0 min-w-0"
                               aria-hidden="true"
                             />
                           )

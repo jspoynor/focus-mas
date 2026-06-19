@@ -23,14 +23,14 @@ function MainShell({ onCycleWallpaper }: { onCycleWallpaper: () => void }) {
       {userDataStatus === 'loading' ? (
         <DataLoadingSkeleton />
       ) : (
-        <div className="app-main-layout w-full gap-4 lg:gap-6">
-          <div className="app-main-layout__left flex flex-col">
+        <div className="app-main-layout min-h-0 w-full flex-1 gap-4 overflow-x-hidden lg:gap-6">
+          <div className="app-main-layout__left flex min-h-0 flex-col">
             <LeftPanel />
           </div>
-          <div className="app-main-layout__center flex min-w-0 flex-col justify-center lg:shrink">
+          <div className="app-main-layout__center flex min-h-0 min-w-0 flex-col justify-center overflow-y-auto overflow-x-hidden lg:shrink">
             <CenterColumn />
           </div>
-          <div className="app-main-layout__right flex flex-col">
+          <div className="app-main-layout__right flex min-h-0 flex-col">
             <ContributionCalendar />
           </div>
         </div>

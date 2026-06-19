@@ -1,6 +1,6 @@
 function PanelSkeleton({ lines = 3 }: { lines?: number }) {
   return (
-    <section className="glass-panel side-panel min-h-0 flex-1 overflow-hidden rounded-glass-lg p-6" aria-hidden="true">
+    <section className="glass-panel min-h-0 flex-1 overflow-hidden rounded-glass-lg p-6" aria-hidden="true">
       <div className="space-y-4">
         {Array.from({ length: lines }, (_, index) => (
           <div
@@ -27,7 +27,7 @@ function TimerSkeleton() {
 export function DataLoadingSkeleton() {
   return (
     <div
-      className="app-main-layout w-full gap-4 lg:gap-6"
+      className="app-main-layout min-h-0 w-full flex-1 gap-4 overflow-hidden lg:gap-6"
       role="status"
       aria-label="Loading your focus data"
     >
