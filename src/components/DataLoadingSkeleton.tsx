@@ -27,7 +27,7 @@ function TimerSkeleton() {
 export function DataLoadingSkeleton() {
   return (
     <div
-      className="app-main-layout min-h-0 w-full flex-1 gap-4 overflow-hidden lg:gap-6"
+      className="app-main-layout w-full flex-1 gap-4 lg:gap-6"
       role="status"
       aria-label="Loading your focus data"
     >

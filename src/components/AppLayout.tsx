@@ -89,7 +89,7 @@ export function AppLayout({ children, onCycleWallpaper }: AppLayoutProps) {
           </button>
         </div>
       </header>
-      <main className="flex min-h-0 w-full flex-1 flex-col overflow-hidden px-4 py-4 sm:px-6 lg:px-8 lg:py-0">
+      <main className="app-main flex min-h-0 w-full flex-1 flex-col px-4 py-4 sm:px-6 lg:px-8 lg:py-0">
         {children}
       </main>
     </div>
