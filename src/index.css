@@ -304,51 +304,8 @@
   min-height: 0;
 }
 
-.app-main {
-  overflow: hidden;
-}
-
-/*
- * Compact stacked layout (timer above panels): scroll inside main, timer row auto-sized,
- * panels get a generous minimum height (4× timer share of a 1:4 page).
- */
-@media not ((min-width: 1024px) and (orientation: landscape)) {
-  .app-main {
-    overflow-x: hidden;
-    overflow-y: auto;
-  }
-
-  .app-main-layout {
-    overflow: visible;
-    grid-template-rows: auto minmax(80dvh, auto);
-  }
-
-  .app-main-layout__center {
-    overflow: visible;
-  }
-}
-
 /* Wide landscape: classic three-column layout */
 @media (min-width: 1024px) and (orientation: landscape) {
-  html,
-  body,
-  #root {
-    height: 100%;
-    overflow: hidden;
-  }
-
-  .app-shell {
-    height: 100svh;
-    overflow: hidden;
-  }
-
-  .app-shell > main,
-  .app-main {
-    flex: 1 1 0%;
-    min-height: 0;
-    overflow: hidden;
-  }
-
   .app-main-layout {
     /*
      * Lock side rails to their 1920×1080 Chrome width:
@@ -361,9 +318,7 @@
       minmax(var(--app-side-panel-min-width), 0.48fr);
     grid-template-rows: minmax(0, 1fr);
     grid-template-areas: "left center right";
-    min-height: 0;
     height: 100%;
-    overflow: hidden;
   }
 
   .app-main-layout__left,
@@ -374,8 +329,6 @@
 
   .app-main-layout__center {
     container-type: inline-size;
-    overflow-x: hidden;
-    overflow-y: auto;
   }
 
   /* Scale countdown digits to the center rail (~3.2em wide for "30:00") */
