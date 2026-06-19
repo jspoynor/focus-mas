@@ -30,6 +30,8 @@ export interface AppState {
   focusPlanDraft: string
   focusPageIndex: number
   focusSnapshots: FocusPlanSnapshot[]
+  /** When false, live mode hides the editable draft page until break/idle planning. */
+  focusDraftSlotVisible: boolean
   plannerViewMode: PlannerViewMode
   /** When set, the planner shows archived data for this date (read-only). */
   snapshotDateKey: string | null
@@ -39,6 +41,8 @@ export interface AppState {
   timerMode: TimerMode
   /** True while the post-session survey is visible (focus plan stays locked). */
   surveyActive: boolean
+  /** Session awaiting post-session survey answers; null when survey is closed. */
+  pendingSurveySessionId: string | null
 }
 
 export interface AppActions {
@@ -60,7 +64,10 @@ export interface AppActions {
   setLiveDateKey: (liveDateKey: string) => void
   setDayPlanSaveStatus: (dayPlanSaveStatus: DayPlanSaveStatus) => void
   setTimerMode: (timerMode: TimerMode) => void
-  setSurveyActive: (surveyActive: boolean) => void
+  setSurveyState: (payload: {
+    surveyActive: boolean
+    pendingSurveySessionId: string | null
+  }) => void
   recordFocusSessionStart: (snapshot: FocusPlanSnapshot) => void
   recordFocusSessionStop: (sessionId: string) => void
   recordFocusSessionCycleComplete: () => void
@@ -87,12 +94,14 @@ const initialState: AppState = {
   focusPlanDraft: '',
   focusPageIndex: 0,
   focusSnapshots: [],
+  focusDraftSlotVisible: true,
   plannerViewMode: 'live',
   snapshotDateKey: null,
   liveDateKey: toDateKey(new Date()),
   dayPlanSaveStatus: 'idle',
   timerMode: 'idle',
   surveyActive: false,
+  pendingSurveySessionId: null,
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -115,22 +124,28 @@ export const useAppStore = create<AppStore>((set) => ({
         state.focusPageIndex,
         focusSnapshots.length,
         state.plannerViewMode,
+        state.focusDraftSlotVisible,
       ),
     })),
   setPlannerViewMode: (plannerViewMode) => set({ plannerViewMode }),
   setLiveDateKey: (liveDateKey) => set({ liveDateKey }),
   setDayPlanSaveStatus: (dayPlanSaveStatus) => set({ dayPlanSaveStatus }),
   setTimerMode: (timerMode) => set({ timerMode }),
-  setSurveyActive: (surveyActive) => set({ surveyActive }),
+  setSurveyState: ({ surveyActive, pendingSurveySessionId }) =>
+    set({ surveyActive, pendingSurveySessionId }),
   recordFocusSessionStart: (snapshot) =>
     set((state) => {
       const focusSnapshots = [...state.focusSnapshots, snapshot]
+      const focusDraftSlotVisible = false
       return {
         focusSnapshots,
+        focusPlanDraft: '',
+        focusDraftSlotVisible,
         focusPageIndex: clampFocusPageIndex(
           focusSnapshots.length - 1,
           focusSnapshots.length,
           state.plannerViewMode,
+          focusDraftSlotVisible,
         ),
       }
     }),
@@ -140,25 +155,40 @@ export const useAppStore = create<AppStore>((set) => ({
       const focusSnapshots = state.focusSnapshots.filter(
         (entry) => entry.sessionId !== sessionId,
       )
+      const focusDraftSlotVisible = true
       return {
         focusSnapshots,
         focusPlanDraft: removed?.planText ?? state.focusPlanDraft,
+        focusDraftSlotVisible,
         focusPageIndex: clampFocusPageIndex(
-          getDefaultFocusPageIndex(focusSnapshots.length, 'live'),
+          getDefaultFocusPageIndex(
+            focusSnapshots.length,
+            state.plannerViewMode,
+            focusDraftSlotVisible,
+          ),
           focusSnapshots.length,
           state.plannerViewMode,
+          focusDraftSlotVisible,
         ),
       }
     }),
   recordFocusSessionCycleComplete: () =>
-    set((state) => ({
-      focusPlanDraft: '',
-      focusPageIndex: clampFocusPageIndex(
-        getDefaultFocusPageIndex(state.focusSnapshots.length, 'live'),
-        state.focusSnapshots.length,
-        state.plannerViewMode,
-      ),
-    })),
+    set((state) => {
+      const focusDraftSlotVisible = true
+      return {
+        focusDraftSlotVisible,
+        focusPageIndex: clampFocusPageIndex(
+          getDefaultFocusPageIndex(
+            state.focusSnapshots.length,
+            state.plannerViewMode,
+            focusDraftSlotVisible,
+          ),
+          state.focusSnapshots.length,
+          state.plannerViewMode,
+          focusDraftSlotVisible,
+        ),
+      }
+    }),
   hydrateLivePlannerDay: (plannerDay) =>
     set({
       snapshotDateKey: null,
@@ -166,7 +196,8 @@ export const useAppStore = create<AppStore>((set) => ({
       dayPlanDraft: plannerDay.dayPlan,
       focusSnapshots: plannerDay.focusSessions,
       focusPlanDraft: '',
-      focusPageIndex: getDefaultFocusPageIndex(plannerDay.focusSessions.length, 'live'),
+      focusDraftSlotVisible: true,
+      focusPageIndex: getDefaultFocusPageIndex(plannerDay.focusSessions.length, 'live', true),
       plannerViewMode: 'live',
       dayPlanSaveStatus: 'idle',
     }),
@@ -186,12 +217,14 @@ export const useAppStore = create<AppStore>((set) => ({
       focusPlanDraft: '',
       focusPageIndex: 0,
       focusSnapshots: [],
+      focusDraftSlotVisible: true,
       plannerViewMode: 'live',
       snapshotDateKey: null,
       liveDateKey: toDateKey(new Date()),
       dayPlanSaveStatus: 'idle',
       timerMode: 'idle',
       surveyActive: false,
+      pendingSurveySessionId: null,
     }),
   applyLiveMidnightRollover: () =>
     set({
@@ -199,6 +232,7 @@ export const useAppStore = create<AppStore>((set) => ({
       dayPlanDraft: '',
       focusPlanDraft: '',
       focusSnapshots: [],
+      focusDraftSlotVisible: true,
       focusPageIndex: 0,
       dayPlanSaveStatus: 'idle',
     }),
@@ -210,6 +244,7 @@ export const useAppStore = create<AppStore>((set) => ({
           state.focusPageIndex - 1,
           state.focusSnapshots.length,
           state.plannerViewMode,
+          state.focusDraftSlotVisible,
         ),
       }
     }),
@@ -220,6 +255,7 @@ export const useAppStore = create<AppStore>((set) => ({
           state.focusPageIndex,
           state.focusSnapshots.length,
           state.plannerViewMode,
+          state.focusDraftSlotVisible,
         )
       ) {
         return state
@@ -229,6 +265,7 @@ export const useAppStore = create<AppStore>((set) => ({
           state.focusPageIndex + 1,
           state.focusSnapshots.length,
           state.plannerViewMode,
+          state.focusDraftSlotVisible,
         ),
       }
     }),

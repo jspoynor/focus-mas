@@ -7,11 +7,17 @@ export function useFocusPageSync() {
   const focusPageIndex = useAppStore((s) => s.focusPageIndex)
   const snapshotCount = useAppStore((s) => s.focusSnapshots.length)
   const plannerViewMode = useAppStore((s) => s.plannerViewMode)
+  const focusDraftSlotVisible = useAppStore((s) => s.focusDraftSlotVisible)
 
   useEffect(() => {
-    const clamped = clampFocusPageIndex(focusPageIndex, snapshotCount, plannerViewMode)
+    const clamped = clampFocusPageIndex(
+      focusPageIndex,
+      snapshotCount,
+      plannerViewMode,
+      focusDraftSlotVisible,
+    )
     if (clamped !== focusPageIndex) {
       useAppStore.getState().setFocusPageIndex(clamped)
     }
-  }, [focusPageIndex, snapshotCount, plannerViewMode])
+  }, [focusPageIndex, snapshotCount, plannerViewMode, focusDraftSlotVisible])
 }

@@ -26,7 +26,7 @@ const SCROLL_EDGE_MARGIN = '120px 0px'
 export function ContributionCalendar() {
   const sessions = useAppStore((s) => s.sessions)
   const progress = useAppStore((s) => s.progress)
-  const { openSnapshot } = usePlannerSnapshot()
+  const { openSnapshot, returnToToday } = usePlannerSnapshot()
   const scrollRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const bottomSentinelRef = useRef<HTMLDivElement>(null)
@@ -78,6 +78,17 @@ export function ContributionCalendar() {
   }, [])
 
   const todayKey = toDateKey(calendar.today)
+
+  const handlePlannerDayClick = useCallback(
+    (dateKey: string) => {
+      if (dateKey === todayKey) {
+        void returnToToday()
+        return
+      }
+      void openSnapshot(dateKey)
+    },
+    [openSnapshot, returnToToday, todayKey],
+  )
 
   useLayoutEffect(() => {
     const container = scrollRef.current
@@ -188,9 +199,7 @@ export function ContributionCalendar() {
                             isProjectedDate={calendar.projectedKey === dateKey}
                             projectedDateLabel={calendar.projectedLabel}
                             isPlannerClickable={isPlannerClickable}
-                            onPlannerDayClick={(clickedDateKey) => {
-                              void openSnapshot(clickedDateKey)
-                            }}
+                            onPlannerDayClick={handlePlannerDayClick}
                           />
                         )
                       }),

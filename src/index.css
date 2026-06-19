@@ -387,6 +387,120 @@
   mask-composite: exclude;
 }
 
+/* Planner markdown editor — headless TipTap inside glass panel */
+.planner-markdown-editor .ProseMirror {
+  min-height: 100%;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  /* Room for outside list markers before the panel's overflow clip edge */
+  padding-left: 0.625rem;
+}
+
+.planner-markdown-editor .ProseMirror:focus {
+  outline: none;
+}
+
+.planner-markdown-editor .ProseMirror p {
+  margin: 0;
+}
+
+.planner-markdown-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.planner-markdown-editor .ProseMirror ul:not([data-type='taskList']) {
+  list-style-type: disc;
+  list-style-position: outside;
+  margin: 0.125rem 0;
+  padding-left: 1.5rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.planner-markdown-editor .ProseMirror ol {
+  list-style-type: decimal;
+  list-style-position: outside;
+  margin: 0.125rem 0;
+  /* Wider gutter than bullets — decimal markers need more space in mono */
+  padding-left: 2.25rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.planner-markdown-editor .ProseMirror ul:not([data-type='taskList']) > li,
+.planner-markdown-editor .ProseMirror ol > li {
+  display: list-item;
+}
+
+.planner-markdown-editor .ProseMirror li {
+  line-height: 1.625;
+}
+
+.planner-markdown-editor .ProseMirror ul:not([data-type='taskList']) > li::marker,
+.planner-markdown-editor .ProseMirror ol > li::marker {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.planner-markdown-editor .ProseMirror li p {
+  margin: 0;
+}
+
+.planner-markdown-editor .ProseMirror ul[data-type='taskList'] {
+  list-style: none;
+  margin: 0.125rem 0;
+  padding: 0;
+}
+
+.planner-markdown-editor .ProseMirror ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.planner-markdown-editor .ProseMirror ul[data-type='taskList'] li > label {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  align-self: flex-start;
+  height: 1.625em;
+  margin: 0;
+  user-select: none;
+}
+
+.planner-markdown-editor .ProseMirror ul[data-type='taskList'] li > label input[type='checkbox'] {
+  appearance: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0.125rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.planner-markdown-editor .ProseMirror ul[data-type='taskList'] li > label input[type='checkbox']:checked {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.planner-markdown-editor .ProseMirror ul[data-type='taskList'] li[data-checked='true'] > div {
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration: line-through;
+}
+
+.planner-markdown-editor .ProseMirror[contenteditable='false'] {
+  color: rgba(255, 255, 255, 0.8);
+  cursor: default;
+}
+
+.planner-markdown-editor .ProseMirror[contenteditable='false'] ul[data-type='taskList'] li > label input[type='checkbox'] {
+  cursor: default;
+  pointer-events: none;
+}
+
 @media (hover: none), (prefers-reduced-motion: reduce) {
   .glass-panel::before,
   .glass-panel::after,

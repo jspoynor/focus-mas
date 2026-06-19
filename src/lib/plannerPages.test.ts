@@ -6,15 +6,23 @@ import {
   formatFocusSessionHeader,
   getDefaultFocusPageIndex,
   getFocusPageCount,
+  getFocusPageSnapshot,
   getFocusPageText,
+  getFocusSessionOutcomeStatus,
   isFocusDraftPage,
   isFocusSnapshotPage,
+  shouldShowFocusSessionOutcome,
 } from './plannerPages'
 
 describe('getFocusPageCount', () => {
-  it('includes the draft page in live mode', () => {
+  it('includes the draft page in live mode when the draft slot is visible', () => {
     expect(getFocusPageCount(0, 'live')).toBe(1)
     expect(getFocusPageCount(3, 'live')).toBe(4)
+  })
+
+  it('hides the draft page in live mode while a session is in progress', () => {
+    expect(getFocusPageCount(1, 'live', false)).toBe(1)
+    expect(getFocusPageCount(3, 'live', false)).toBe(3)
   })
 
   it('counts snapshots only in snapshot mode', () => {
@@ -59,5 +67,45 @@ describe('formatFocusSessionHeader', () => {
   it('labels live pages as K of N + 1', () => {
     expect(formatFocusSessionHeader(0, 0, 'live')).toBe('Focus session · 1 of 1')
     expect(formatFocusSessionHeader(2, 2, 'live')).toBe('Focus session · 3 of 3')
+  })
+})
+
+describe('focus session outcome', () => {
+  const snapshots = [
+    { sessionId: 'a', planText: 'first', startedAt: '2026-01-01T10:00:00.000Z' },
+    { sessionId: 'b', planText: 'second', startedAt: '2026-01-01T11:00:00.000Z' },
+  ]
+
+  it('resolves canceled, uninterrupted, and interrupted outcomes from session records', () => {
+    const sessions = [
+      { id: 'a', distracted: false },
+      { id: 'b', distracted: true },
+    ]
+
+    expect(getFocusSessionOutcomeStatus('a', sessions)).toBe('completed-uninterrupted')
+    expect(getFocusSessionOutcomeStatus('b', sessions)).toBe('completed-interrupted')
+    expect(getFocusSessionOutcomeStatus('missing', sessions)).toBe('canceled')
+  })
+
+  it('shows pending survey before session survey answers are loaded', () => {
+    const sessions = [{ id: 'a', distracted: false }]
+
+    expect(getFocusSessionOutcomeStatus('pending', sessions, 'pending')).toBe(
+      'completed-pending-survey',
+    )
+    expect(getFocusSessionOutcomeStatus('a', sessions, 'pending')).toBe(
+      'completed-uninterrupted',
+    )
+  })
+
+  it('shows outcome labels only on archived snapshot pages', () => {
+    expect(getFocusPageSnapshot(0, snapshots, 'live')?.sessionId).toBe('a')
+    expect(getFocusPageSnapshot(2, snapshots, 'live')).toBeNull()
+
+    expect(shouldShowFocusSessionOutcome(0, snapshots.length, 'live', 'a', null)).toBe(true)
+    expect(shouldShowFocusSessionOutcome(0, snapshots.length, 'live', 'a', 'a')).toBe(false)
+    expect(shouldShowFocusSessionOutcome(2, snapshots.length, 'live', undefined, null)).toBe(
+      false,
+    )
   })
 })

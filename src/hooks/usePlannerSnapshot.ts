@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { toDateKey } from '../lib/calendarGrid'
-import { loadPlannerDay, saveDayPlan } from '../lib/plannerDays'
+import { emptyPlannerDay, loadPlannerDay, saveDayPlan } from '../lib/plannerDays'
 import { useAppStore } from '../store/useAppStore'
 
 async function flushLiveDayPlanIfNeeded(): Promise<void> {
@@ -21,7 +21,7 @@ async function flushLiveDayPlanIfNeeded(): Promise<void> {
   }
 }
 
-/** Opens archived planner data for a calendar day or returns to live today editing. */
+/** Past calendar days open read-only snapshots; today returns to live planning. */
 export function usePlannerSnapshot() {
   const userId = useAppStore((s) => s.userId)
   const userDataStatus = useAppStore((s) => s.userDataStatus)
@@ -32,12 +32,15 @@ export function usePlannerSnapshot() {
 
       await flushLiveDayPlanIfNeeded()
 
+      let plannerDay
       try {
-        const plannerDay = await loadPlannerDay(userId, dateKey)
-        useAppStore.getState().hydrateSnapshotPlannerDay(plannerDay)
+        plannerDay = await loadPlannerDay(userId, dateKey)
       } catch (err) {
         console.warn('[planner] Failed to load snapshot day:', err)
+        plannerDay = emptyPlannerDay(dateKey)
       }
+
+      useAppStore.getState().hydrateSnapshotPlannerDay(plannerDay)
     },
     [userId, userDataStatus],
   )

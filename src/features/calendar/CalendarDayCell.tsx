@@ -164,7 +164,8 @@ function buildAriaLabel(
   const markers = [
     isToday ? 'today' : null,
     isProjectedDate ? 'projected advancement date' : null,
-    isPlannerClickable ? 'open planner snapshot' : null,
+    isToday && isPlannerClickable ? 'return to live planning' : null,
+    !isToday && isPlannerClickable ? 'open planner snapshot' : null,
   ].filter(Boolean)
 
   if (!stats.completedCount) {
