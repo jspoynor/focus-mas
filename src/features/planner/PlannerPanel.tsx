@@ -14,7 +14,7 @@ import {
 import { useFocusPageSync } from '../../hooks/useFocusPageSync'
 import { useAppStore } from '../../store/useAppStore'
 import { FloatingTooltip } from '../../components/FloatingTooltip'
-import { PlannerMarkdownEditor } from './PlannerMarkdownEditor'
+import { PlannerMarkdownEditor, type PlannerMarkdownEditorHandle } from './PlannerMarkdownEditor'
 
 const PLANNER_TEXTAREA_CLASS =
   'min-h-0 w-full flex-1 resize-none border-0 bg-transparent px-0 py-1 text-sm leading-relaxed text-white shadow-none placeholder:text-white/35 focus:border-0 focus:outline-none focus:ring-0 disabled:cursor-default disabled:text-white/80'
@@ -22,12 +22,13 @@ const PLANNER_TEXTAREA_CLASS =
 const SECTION_HEADER_CLASS = 'shrink-0 text-xs uppercase tracking-widest text-white/50'
 
 const ARROW_BUTTON_CLASS =
-  'flex h-7 w-7 shrink-0 items-center justify-center rounded-glass text-base leading-none text-white/60 transition-colors hover:text-white/90 disabled:cursor-not-allowed disabled:opacity-30'
+  'flex h-7 w-7 shrink-0 items-center justify-center rounded-glass text-base leading-none text-white/60 transition-colors hover:text-white/90 disabled:cursor-default disabled:opacity-30'
 
 export function PlannerPanel() {
   useFocusPageSync()
 
   const dayPlanHeaderRef = useRef<HTMLHeadingElement>(null)
+  const focusEditorRef = useRef<PlannerMarkdownEditorHandle>(null)
   const [dayPlanTooltipOpen, setDayPlanTooltipOpen] = useState(false)
   const dayPlanTooltipId = useId()
 
@@ -89,6 +90,12 @@ export function PlannerPanel() {
     isLiveMode &&
     isPlannerReady &&
     !focusSessionLocked
+  const isOnFocusDraftPage = isFocusDraftPage(
+    focusPageIndex,
+    snapshotCount,
+    plannerViewMode,
+    focusDraftSlotVisible,
+  )
   const isFocusReadOnly =
     isFocusSnapshotPage(focusPageIndex, snapshotCount, plannerViewMode, focusDraftSlotVisible) ||
     !isFocusEditable
@@ -120,6 +127,22 @@ export function PlannerPanel() {
           )
         ]
       : null
+
+  const commitFocusDraft = () => {
+    if (isOnFocusDraftPage) {
+      focusEditorRef.current?.commit()
+    }
+  }
+
+  const handleFocusGoPrev = () => {
+    commitFocusDraft()
+    focusGoPrev()
+  }
+
+  const handleFocusGoNext = () => {
+    commitFocusDraft()
+    focusGoNext()
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -173,7 +196,7 @@ export function PlannerPanel() {
           <button
             type="button"
             className={`${ARROW_BUTTON_CLASS} justify-self-start`}
-            onClick={focusGoPrev}
+            onClick={handleFocusGoPrev}
             disabled={!canPrev}
             aria-label="Previous focus session plan"
           >
@@ -183,7 +206,7 @@ export function PlannerPanel() {
           <button
             type="button"
             className={`${ARROW_BUTTON_CLASS} justify-self-end`}
-            onClick={focusGoNext}
+            onClick={handleFocusGoNext}
             disabled={!canNext}
             aria-label="Next focus session plan"
           >
@@ -199,10 +222,12 @@ export function PlannerPanel() {
           </p>
         ) : null}
         <PlannerMarkdownEditor
+          key={`focus-plan-${focusPageIndex}`}
+          ref={focusEditorRef}
           className={PLANNER_TEXTAREA_CLASS}
           value={focusText}
           onChange={(nextValue) => {
-            if (isFocusEditable) {
+            if (isOnFocusDraftPage) {
               setFocusPlanDraft(nextValue)
             }
           }}

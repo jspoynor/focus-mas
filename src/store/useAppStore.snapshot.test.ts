@@ -94,4 +94,27 @@ describe('focus plan draft lifecycle', () => {
     expect(state.focusDraftSlotVisible).toBe(true)
     expect(state.focusPageIndex).toBe(1)
   })
+
+  it('keeps the upcoming session draft when paging through older plans', () => {
+    useAppStore.setState({
+      focusPlanDraft: 'upcoming session plan',
+      focusSnapshots: [
+        {
+          sessionId: 'session-1',
+          planText: 'first session',
+          startedAt: '2026-06-19T10:00:00.000Z',
+        },
+      ],
+      focusDraftSlotVisible: true,
+      focusPageIndex: 1,
+    })
+
+    useAppStore.getState().focusGoPrev()
+    expect(useAppStore.getState().focusPageIndex).toBe(0)
+    expect(useAppStore.getState().focusPlanDraft).toBe('upcoming session plan')
+
+    useAppStore.getState().focusGoNext()
+    expect(useAppStore.getState().focusPageIndex).toBe(1)
+    expect(useAppStore.getState().focusPlanDraft).toBe('upcoming session plan')
+  })
 })

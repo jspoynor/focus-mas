@@ -12,7 +12,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import Text from '@tiptap/extension-text'
 import { Markdown } from '@tiptap/markdown'
 import { EditorContent, useEditor } from '@tiptap/react'
-import { useEffect, useMemo, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 
 export interface PlannerMarkdownEditorProps {
   className?: string
@@ -21,6 +21,10 @@ export interface PlannerMarkdownEditorProps {
   readOnly?: boolean
   placeholder?: string
   'aria-label'?: string
+}
+
+export interface PlannerMarkdownEditorHandle {
+  commit: () => void
 }
 
 function createPlannerExtensions(placeholder: string) {
@@ -41,19 +45,36 @@ function createPlannerExtensions(placeholder: string) {
   ]
 }
 
-export function PlannerMarkdownEditor({
-  className = '',
-  value,
-  onChange,
-  readOnly = false,
-  placeholder = '',
-  'aria-label': ariaLabel,
-}: PlannerMarkdownEditorProps) {
+export const PlannerMarkdownEditor = forwardRef<
+  PlannerMarkdownEditorHandle,
+  PlannerMarkdownEditorProps
+>(function PlannerMarkdownEditor(
+  {
+    className = '',
+    value,
+    onChange,
+    readOnly = false,
+    placeholder = '',
+    'aria-label': ariaLabel,
+  },
+  ref,
+) {
   const lastEmittedRef = useRef<string | null>(null)
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null)
 
   const extensions = useMemo(() => createPlannerExtensions(placeholder), [placeholder])
+
+  const commitEditorValue = () => {
+    const activeEditor = editorRef.current
+    if (!activeEditor || activeEditor.isDestroyed || !activeEditor.isEditable) {
+      return
+    }
+    const markdown = activeEditor.getMarkdown()
+    lastEmittedRef.current = markdown
+    onChangeRef.current(markdown)
+  }
 
   const editor = useEditor({
     extensions,
@@ -75,12 +96,38 @@ export function PlannerMarkdownEditor({
     },
   })
 
+  editorRef.current = editor
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      commit: commitEditorValue,
+    }),
+    [editor],
+  )
+
   useEffect(() => {
     if (!editor) {
       return
     }
     editor.setEditable(!readOnly)
   }, [editor, readOnly])
+
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) {
+      return
+    }
+
+    const editorElement = editor.view.dom
+    const handleBlur = () => {
+      commitEditorValue()
+    }
+
+    editorElement.addEventListener('blur', handleBlur)
+    return () => {
+      editorElement.removeEventListener('blur', handleBlur)
+    }
+  }, [editor])
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) {
@@ -109,4 +156,4 @@ export function PlannerMarkdownEditor({
       />
     </div>
   )
-}
+})
