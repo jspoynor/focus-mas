@@ -287,13 +287,13 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
 
   return (
     <section
-      className={`text-center transition-all duration-500 ease-out ${compact ? 'py-2' : 'py-4'}`}
+      className={`w-full min-w-0 text-center transition-all duration-500 ease-out ${compact ? 'py-2' : 'py-4'}`}
       aria-label="Focus timer"
     >
       <p className="text-xs uppercase tracking-widest text-white/50">{modeLabel}</p>
       <p
-        className={`mt-4 font-bold tabular-nums tracking-tight text-white transition-all duration-500 ease-out ${
-          compact ? 'text-5xl sm:text-6xl' : 'text-9xl sm:text-[10rem] lg:text-[12rem]'
+        className={`timer-display mt-4 w-full max-w-full overflow-hidden font-bold tabular-nums tracking-tight text-white transition-all duration-500 ease-out ${
+          compact ? 'timer-display--compact' : ''
         }`}
         aria-live="polite"
         aria-atomic="true"

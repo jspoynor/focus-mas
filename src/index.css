@@ -254,6 +254,29 @@
   opacity: 0.9;
 }
 
+/* Focus timer — fluid in compact layout; container-scaled in wide landscape */
+.timer-display {
+  font-size: clamp(3rem, 20vw, 8rem);
+  line-height: 1;
+}
+
+@media (min-width: 640px) {
+  .timer-display:not(.timer-display--compact) {
+    font-size: clamp(3.5rem, 18vw, 10rem);
+  }
+}
+
+.timer-display--compact {
+  font-size: clamp(2.25rem, 12vw, 3.75rem);
+  line-height: 1;
+}
+
+@media (min-width: 640px) {
+  .timer-display--compact {
+    font-size: clamp(2.5rem, 14vw, 6rem);
+  }
+}
+
 /* Compact layout: timer on top, planner and calendar side-by-side below */
 .app-main-layout {
   display: grid;
@@ -284,7 +307,15 @@
 /* Wide landscape: classic three-column layout */
 @media (min-width: 1024px) and (orientation: landscape) {
   .app-main-layout {
-    grid-template-columns: minmax(0, 0.48fr) minmax(0, 2.24fr) minmax(0, 0.48fr);
+    /*
+     * Lock side rails to their 1920×1080 Chrome width:
+     * viewport − main lg:px-8 (4rem) − lg:gap-6 × 2 (3rem), then × 0.48/3.2.
+     */
+    --app-side-panel-min-width: calc((1920px - 4rem - 3rem) * 0.48 / 3.2 * 0.9);
+    grid-template-columns:
+      minmax(var(--app-side-panel-min-width), 0.48fr)
+      minmax(0, 2.24fr)
+      minmax(var(--app-side-panel-min-width), 0.48fr);
     grid-template-rows: minmax(0, 1fr);
     grid-template-areas: "left center right";
     height: 100%;
@@ -294,6 +325,19 @@
   .app-main-layout__right {
     padding-top: 1rem;
     padding-bottom: 1rem;
+  }
+
+  .app-main-layout__center {
+    container-type: inline-size;
+  }
+
+  /* Scale countdown digits to the center rail (~3.2em wide for "30:00") */
+  .timer-display:not(.timer-display--compact) {
+    font-size: clamp(2.5rem, 28cqw, 12rem);
+  }
+
+  .timer-display--compact {
+    font-size: clamp(2rem, 16cqw, 6rem);
   }
 }
 

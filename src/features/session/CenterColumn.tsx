@@ -148,7 +148,7 @@ export function CenterColumn() {
     devToolbar?.shortDurationEnabled ? devToolbar.shortDurationSeconds : null
 
   return (
-    <div className="flex flex-col gap-4 overflow-hidden">
+    <div className="flex w-full min-w-0 flex-col gap-4 overflow-hidden">
       <Timer
         ref={timerRef}
         compact={pendingSurvey !== null}
