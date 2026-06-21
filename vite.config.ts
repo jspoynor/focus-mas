@@ -28,10 +28,10 @@ export default defineConfig({
         'wallpaper-3.jpg',
       ],
       manifest: {
-        name: 'Focus Mastery',
+        name: 'Focus Más',
         short_name: 'Focus',
         description:
-          'Train attention span through mastery-based focus session progression.',
+          'Train attention span through focus-based session progression.',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',

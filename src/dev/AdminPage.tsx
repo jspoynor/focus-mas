@@ -142,7 +142,7 @@ function ProgressEditor() {
         </label>
 
         <label className="block text-sm">
-          <span className="text-white/60">Previous mastery % (empty = null)</span>
+          <span className="text-white/60">Previous focus rate % (empty = null)</span>
           <input
             type="number"
             min={0}

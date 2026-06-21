@@ -1,6 +1,6 @@
-# Focus Mastery
+# Focus Más
 
-A single-user web app that trains attention span by gating progression on **mastery**, not a fixed timetable.
+A single-user web app that trains attention span by gating progression on **focus performance**, not a fixed timetable.
 
 ## Stack
 
@@ -61,7 +61,7 @@ src/
     timer/          # Pomodoro timer
     survey/         # Post-session survey
     calendar/       # Contribution calendar
-    mastery/        # Progression engine
+    mastery/        # Focus progression engine
   store/            # Zustand app store
   lib/              # Firebase client, planner helpers
   types/            # Firestore types

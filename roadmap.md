@@ -1,4 +1,4 @@
-# Focus Mastery — Daily Planner Roadmap
+# Focus Más — Daily Planner Roadmap
 
 Left-panel planner: day notes + per-session focus plans, persisted in Firestore and browsable via the calendar. Each phase is a vertical slice — shippable, testable, and builds on the previous phase.
 

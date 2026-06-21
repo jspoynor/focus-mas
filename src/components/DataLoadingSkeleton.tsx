@@ -1,6 +1,6 @@
 function PanelSkeleton({ lines = 3 }: { lines?: number }) {
   return (
-    <section className="glass-panel min-h-0 flex-1 overflow-hidden rounded-glass-lg p-6" aria-hidden="true">
+    <section className="glass-panel min-h-0 flex-1 rounded-glass-lg p-6" aria-hidden="true">
       <div className="space-y-4">
         {Array.from({ length: lines }, (_, index) => (
           <div

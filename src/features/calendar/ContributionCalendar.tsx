@@ -143,7 +143,7 @@ export function ContributionCalendar() {
 
   return (
     <section
-      className="glass-panel min-h-0 min-w-0 flex-1 overflow-hidden rounded-glass-lg p-6"
+      className="glass-panel min-h-0 min-w-0 flex-1 rounded-glass-lg p-6"
       aria-label="Contribution calendar"
     >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">

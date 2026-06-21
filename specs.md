@@ -1,8 +1,8 @@
-# Focus Mastery — Authoritative Product & Technical Spec
+# Focus Más — Authoritative Product & Technical Spec
 
 ## 1. Core concept
 
-A single-user PWA that trains attention span by gating progression on mastery, not a fixed timetable. Users complete Pomodoro-style focus sessions, answer a two-question post-session survey, and advance to longer focus durations only when recent performance proves they can sustain attention at the current level.
+A single-user PWA that trains attention span by gating progression on focus performance, not a fixed timetable. Users complete Pomodoro-style focus sessions, answer a two-question post-session survey, and advance to longer focus durations only when recent performance proves they can sustain attention at the current level.
 
 ---
 
@@ -40,7 +40,7 @@ Break length scales with focus duration: `round(focusDurationMinutes × 0.2)` to
 | 75 min | 15 min |
 | 90 min | 20 min |
 
-One break type only — no long-break mechanic. Breaks are UI-only: no Firestore writes, no mastery impact.
+One break type only — no long-break mechanic. Breaks are UI-only: no Firestore writes, no focus rate impact.
 
 ---
 
@@ -57,7 +57,7 @@ Sessions where the timer did **not** run to zero are discarded entirely — not 
 
 ---
 
-## 5. Mastery progression engine
+## 5. Focus progression engine
 
 ### 5.1 Rolling window
 
@@ -69,7 +69,7 @@ When `cleanSessions / totalSessionsInWindow ≥ 80%`, the user advances to the n
 
 ### 5.3 Cold start
 
-Until 5 hours of completed sessions have accumulated, mastery displays as **"Building..."** with a progress bar toward the first full window. No advancement check and no projected date are shown during this period.
+Until 5 hours of completed sessions have accumulated, the focus rate displays as **"Building..."** with a progress bar toward the first full window. No advancement check and no projected date are shown during this period.
 
 ### 5.4 Step-back offer
 
@@ -168,7 +168,7 @@ Clicking a **today or past** calendar cell opens **snapshot mode** for that date
 
 - **Left panel:** daily planner (see §7.2) — styled glass card, visually balanced with the right calendar panel.
 - **Center:** Pomodoro timer — dominant, large.
-- **Right panel:** contribution calendar with mastery date markers.
+- **Right panel:** contribution calendar with focus progression date markers.
 
 ### 7.2 Left panel — daily planner
 
@@ -235,8 +235,8 @@ An audio cue plays when the timer hits zero. No browser notifications.
 ### 7.7 Sign-in screen
 
 Unauthenticated users see a single screen:
-- App name: **Focus Mastery**
-- Description: *"Focus Mastery trains your attention span one session at a time. Complete distraction-free sessions to prove you've mastered your current focus length — then grow into longer ones."*
+- App name: **Focus Más**
+- Description: *"Focus Más trains your attention span one session at a time. Complete distraction-free sessions to prove you've earned your current focus length — then grow into longer ones."*
 - Button: **Sign in with Google**
 
 ---
@@ -267,7 +267,7 @@ Firebase Auth, Google sign-in provider only.
 |-------|------|-------|
 | `currentStageMinutes` | number | Active focus duration |
 | `lastProgressionAt` | timestamp \| null | Timestamp of last stage advance |
-| `prevMasteryPercent` | number \| null | Mastery % after the previous session — used to detect declining rate |
+| `prevMasteryPercent` | number \| null | Focus rate % after the previous session — used to detect declining rate |
 | `stepBackOfferedAt` | timestamp \| null | Last time step-back prompt was shown |
 
 #### `users/{userId}/plannerDays/{dateKey}`
@@ -308,7 +308,7 @@ Env vars (`VITE_FIREBASE_*`) — never hardcoded or committed.
 
 ---
 
-## 10. Mastery math reference
+## 10. Focus rate math reference
 
 ```
 windowSessions   = completed sessions whose cumulative durationMinutes ≤ 300 (5 hours),

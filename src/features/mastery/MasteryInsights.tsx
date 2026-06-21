@@ -20,7 +20,7 @@ export function MasteryStage() {
 
   return (
     <div className="shrink-0">
-      <p className="text-[10px] uppercase tracking-widest text-white/40">Mastery level</p>
+      <p className="text-[10px] uppercase tracking-widest text-white/40">Focus level</p>
       <p
         className="text-xl font-light transition-colors duration-500"
         style={{ color: stageColor }}
@@ -88,7 +88,7 @@ export function MasteryDetails() {
             aria-valuenow={mastery.buildingPercent}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="Progress toward mastery window"
+            aria-label="Progress toward focus window"
           >
             <div
               className="h-full rounded-full bg-emerald-400/80 transition-all duration-500"

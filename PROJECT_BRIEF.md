@@ -1,10 +1,10 @@
-# Focus Mastery — Project Brief
+# Focus Más — Project Brief
 
 > **Note:** `specs.md` and `roadmap.md` are intentionally **not** created in this scaffold step. They will be produced by a grill-me session and follow-on build phases.
 
 ## Concept
 
-A personal web app that trains attention span by gating progression on **mastery**, not a fixed timetable. The user earns longer focus sessions only when recent performance proves they can sustain attention at the current level.
+A personal web app that trains attention span by gating progression on **focus performance**, not a fixed timetable. The user earns longer focus sessions only when recent performance proves they can sustain attention at the current level.
 
 ## Three components + progression engine
 
@@ -19,13 +19,13 @@ After each focus session, two yes/no questions:
 - Did you get distracted?
 - Did you use your phone or social media during the focus session?
 
-Answers feed both the mastery engine and the calendar.
+Answers feed both the focus progression engine and the calendar.
 
 ### 3. Contribution calendar
 
 GitHub-commit-style grid. Each day's color opacity reflects the percentage of that day's focus sessions completed **without distraction**. The projected progression date is surfaced here as motivation; a bad day pushes the date back.
 
-### Mastery progression engine
+### Focus progression engine
 
 Over the last **X** hours of focus time, compute the percentage of sessions completed without distraction. When that exceeds threshold **Y%**, the user advances to the next focus-length stage. Because the rate is known, an estimated progression date can be calculated and shown on the calendar. Failing sessions push the date back.
 

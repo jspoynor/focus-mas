@@ -126,18 +126,26 @@ body::-webkit-scrollbar-corner,
     0 0 0 1px rgba(255, 255, 255, 0.16),
     0 4px 20px rgba(255, 255, 255, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.24);
-  --glass-subtle-blur: blur(6px) saturate(110%);
+  --glass-subtle-blur: blur(12px) saturate(125%);
   --button-press-tint: rgba(255, 255, 255, 0.2);
 
   position: relative;
-  isolation: isolate;
+}
+
+/* Fixed layers sit outside overflow-hidden scroll containers so backdrop-filter can sample them */
+.app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
   background-image: var(--app-wallpaper);
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
+  pointer-events: none;
 }
 
-.app-shell::before {
+.app-shell::after {
   content: "";
   position: fixed;
   inset: 0;
@@ -146,8 +154,14 @@ body::-webkit-scrollbar-corner,
   pointer-events: none;
 }
 
+.app-shell > header,
+.app-shell > main {
+  position: relative;
+  z-index: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .app-shell {
+  .app-shell::before {
     background-attachment: scroll;
   }
 
@@ -256,10 +270,29 @@ body::-webkit-scrollbar-corner,
 .glass-btn-oval,
 .ui-surface {
   background-color: var(--glass-subtle-tint);
-  backdrop-filter: var(--glass-subtle-blur);
+  -webkit-backdrop-filter: blur(12px) saturate(125%);
+  backdrop-filter: blur(12px) saturate(125%);
   -webkit-backdrop-filter: var(--glass-subtle-blur);
+  backdrop-filter: var(--glass-subtle-blur);
   border: 1px solid var(--glass-subtle-border);
   box-shadow: var(--glass-subtle-shadow), inset 0 1px 0 var(--glass-subtle-highlight);
+}
+
+@supports not (
+  (-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))
+) {
+  .glass-surface,
+  .glass-panel,
+  .glass-card,
+  .glass-card-elevated,
+  .glass-nav,
+  .glass-btn,
+  .glass-btn-secondary,
+  .glass-btn-pill,
+  .glass-btn-oval,
+  .ui-surface {
+    background-color: rgba(40, 42, 48, 0.72);
+  }
 }
 
 /* Outside @layer so panel glass wins over liquidglass-tailwind utilities */
@@ -269,6 +302,7 @@ body::-webkit-scrollbar-corner,
   max-height: 100%;
   min-height: 0;
   flex-direction: column;
+  overflow: clip;
 }
 
 .glass-btn-oval {
@@ -473,8 +507,8 @@ body::-webkit-scrollbar-corner,
   .glass-btn-pill,
   .glass-btn-oval,
   .ui-surface {
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     background-color: rgba(55, 55, 60, 0.9);
   }
 
@@ -514,7 +548,16 @@ body::-webkit-scrollbar-corner,
 .glass-btn-oval,
 .ui-surface {
   position: relative;
-  isolation: isolate;
+}
+
+.glass-panel > *,
+.glass-surface > *,
+.glass-card > *,
+.glass-card-elevated > *,
+.glass-nav > *,
+.ui-surface > * {
+  position: relative;
+  z-index: 1;
 }
 
 .glass-panel::before,

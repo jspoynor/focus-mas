@@ -33,7 +33,7 @@ export function AppLayout({ children, onCycleWallpaper }: AppLayoutProps) {
   return (
     <div className="app-shell flex h-svh flex-col overflow-hidden">
       <header className="z-10 grid shrink-0 grid-cols-[1fr_auto_1fr] items-center bg-transparent px-6 py-3">
-        <p className="text-xs uppercase tracking-widest text-white/50">Focus Mastery</p>
+        <p className="text-xs uppercase tracking-widest text-white/50">Focus Más</p>
         <div className="flex items-center justify-center gap-3">
           <time
             dateTime={isSnapshot ? snapshotDateKey : today.toISOString().slice(0, 10)}
