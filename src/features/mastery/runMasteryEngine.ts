@@ -6,7 +6,7 @@ import {
   shouldOfferStepBack,
 } from '../../lib/mastery'
 import { loadUserProgress, saveUserProgress } from '../../lib/progress'
-import { loadCompletedSessions } from '../../lib/sessions'
+import { loadCompletedSessions, mergeReloadedSessions } from '../../lib/sessions'
 import { useAppStore } from '../../store/useAppStore'
 import type { UserProgress } from '../../types'
 
@@ -18,11 +18,13 @@ export interface MasteryEngineResult {
 export async function runMasteryEngineAfterSession(
   userId: string,
 ): Promise<MasteryEngineResult> {
-  const [sessions, currentProgress] = await Promise.all([
+  const [reloadedSessions, currentProgress] = await Promise.all([
     loadCompletedSessions(userId),
     loadUserProgress(userId),
   ])
 
+  const { sessions: localSessions } = useAppStore.getState()
+  const sessions = mergeReloadedSessions(reloadedSessions, localSessions)
   const window = computeRollingWindow(sessions)
   const newMasteryPercent = window.cleanRate
   const prevMasteryPercent = currentProgress.prevMasteryPercent

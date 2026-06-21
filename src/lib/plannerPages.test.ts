@@ -64,9 +64,9 @@ describe('focus page content', () => {
 })
 
 describe('formatFocusSessionHeader', () => {
-  it('labels live pages as K of N + 1', () => {
-    expect(formatFocusSessionHeader(0, 0, 'live')).toBe('Focus session · 1 of 1')
-    expect(formatFocusSessionHeader(2, 2, 'live')).toBe('Focus session · 3 of 3')
+  it('labels live pages as K/N', () => {
+    expect(formatFocusSessionHeader(0, 0, 'live')).toBe('Focus session 1/1')
+    expect(formatFocusSessionHeader(2, 2, 'live')).toBe('Focus session 3/3')
   })
 })
 

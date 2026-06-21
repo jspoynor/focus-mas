@@ -101,12 +101,16 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
   )
 
   const finishFocusSession = useCallback(
-    (sessionId: string, duration: number) => {
+    (sessionId: string, duration: number, startedAt: string) => {
       endTimeRef.current = null
       clearTick()
       setMode('idle')
       setRemainingSeconds(0)
-      onFocusCompleteRef.current?.({ sessionId, durationMinutes: duration })
+      onFocusCompleteRef.current?.({
+        sessionId,
+        durationMinutes: duration,
+        startedAt,
+      })
     },
     [clearTick],
   )
@@ -115,6 +119,9 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
     const sessionId = sessionIdRef.current
     const startedAt = sessionStartedAtRef.current
     const duration = focusDurationRef.current
+    const startedAtIso =
+      startedAt?.toISOString() ??
+      new Date(Date.now() - duration * 60_000).toISOString()
 
     sessionIdRef.current = null
     sessionStartedAtRef.current = null
@@ -123,7 +130,7 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
     playSessionCompleteCue()
 
     if (userId && sessionId && startedAt) {
-      finishFocusSession(sessionId, duration)
+      finishFocusSession(sessionId, duration, startedAtIso)
       void completeSession(userId, sessionId, startedAt, duration).catch((err) => {
         console.warn('[timer] Failed to persist session:', err)
       })
@@ -131,7 +138,7 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
     }
 
     if (onFocusCompleteRef.current) {
-      finishFocusSession(sessionId ?? 'local', duration)
+      finishFocusSession(sessionId ?? 'local', duration, startedAtIso)
       return
     }
 

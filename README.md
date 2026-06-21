@@ -10,7 +10,7 @@ A single-user web app that trains attention span by gating progression on **mast
 - **Firebase** (Auth + Firestore, Spark/free tier) — Google sign-in and session sync
 - **vite-plugin-pwa** — installable, offline-capable focus timer
 
-Build output is a static SPA, deploy-ready for Vercel Hobby or Cloudflare Pages.
+Build output is a static SPA deployed to **Firebase Hosting** from the `prod` branch.
 
 ## Getting started
 
@@ -69,6 +69,44 @@ src/
 
 Product spec: `specs.md`. Build sequencing: `roadmap.md`.
 
+## Deployment (Firebase Hosting)
+
+Production deploys run automatically when you push to the **`prod`** branch (see `.github/workflows/firebase-hosting.yml`). The workflow runs tests, builds the SPA, deploys Hosting, and deploys Firestore rules.
+
+### One-time setup
+
+1. **Firebase Console** — enable Hosting and Google sign-in; add your hosting domains under Authentication → Authorized domains (`focus-mas.web.app`, `focus-mas.firebaseapp.com`).
+2. **GitHub repository secrets** (Settings → Secrets and variables → Actions):
+
+| Secret | Description |
+|--------|-------------|
+| `VITE_FIREBASE_API_KEY` | Firebase web config |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase web config |
+| `VITE_FIREBASE_PROJECT_ID` | Firebase web config |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Firebase web config |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase web config |
+| `VITE_FIREBASE_APP_ID` | Firebase web config |
+| `FIREBASE_SERVICE_ACCOUNT` | Full JSON key for a deploy service account (Hosting Admin + ability to deploy Firestore rules) |
+
+3. **Create the `prod` branch** and push it:
+
+```bash
+git checkout -b prod
+git push -u origin prod
+```
+
+Merge or cherry-pick release-ready commits into `prod` to deploy.
+
+### Manual deploy
+
+```bash
+cp .env.example .env.local   # fill VITE_FIREBASE_* for production project
+npm ci && npm run build
+npm run firebase:deploy      # hosting + firestore rules
+```
+
+Deploy rules only: `npm run firebase:deploy:rules`
+
 ## Scripts
 
 | Command | Description |
@@ -77,3 +115,6 @@ Product spec: `specs.md`. Build sequencing: `roadmap.md`.
 | `npm run build` | Typecheck + production build |
 | `npm test` | Run unit tests |
 | `npm run preview` | Preview production build |
+| `npm run firebase:deploy` | Deploy Hosting + Firestore rules |
+| `npm run firebase:deploy:hosting` | Deploy Hosting only |
+| `npm run firebase:deploy:rules` | Deploy Firestore rules only |

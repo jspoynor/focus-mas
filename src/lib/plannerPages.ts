@@ -100,7 +100,7 @@ export function formatFocusSessionHeader(
   if (pageCount === 0) {
     return 'Focus session'
   }
-  return `Focus session · ${pageIndex + 1} of ${pageCount}`
+  return `Focus session ${pageIndex + 1}/${pageCount}`
 }
 
 export function getFocusPageSnapshot(

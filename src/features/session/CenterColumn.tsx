@@ -67,6 +67,14 @@ export function CenterColumn() {
         return
       }
 
+      useAppStore.getState().applySessionSurvey({
+        sessionId: pendingSurvey.sessionId,
+        durationMinutes: pendingSurvey.durationMinutes,
+        startedAt: pendingSurvey.startedAt,
+        q1Distracted: answers.q1Distracted,
+        q2UsedPhone: answers.q2UsedPhone,
+      })
+
       try {
         await withTimeout(
           runMasteryEngineAfterSession(userId),
@@ -147,26 +155,37 @@ export function CenterColumn() {
   const shortDurationSeconds =
     devToolbar?.shortDurationEnabled ? devToolbar.shortDurationSeconds : null
 
+  const surveyVisible = pendingSurvey !== null
+  const timerCompact = surveyVisible && !surveyExiting
+  const timerCentered = !surveyVisible || surveyExiting
+
   return (
-    <div className="flex w-full min-w-0 flex-col gap-4 overflow-hidden">
-      <Timer
-        ref={timerRef}
-        compact={pendingSurvey !== null}
-        completed={pendingSurvey !== null}
-        onFocusComplete={handleFocusComplete}
-        breakDurationMinutes={breakDurationMinutes}
-        onBreakStarted={handleBreakStarted}
-        onReturnToReady={handleReturnToReady}
-        shortDurationSeconds={shortDurationSeconds}
+    <div className="flex min-h-full w-full min-w-0 flex-col overflow-hidden">
+      <div
+        className={`timer-layout-spacer min-h-0 shrink basis-0 ${timerCentered ? 'timer-layout-spacer--expanded' : 'timer-layout-spacer--collapsed'}`}
+        aria-hidden
       />
-      {pendingSurvey ? (
-        <PostSessionSurvey
-          session={pendingSurvey}
-          isExiting={surveyExiting}
-          onSubmit={handleSurveySubmit}
-          isSubmitting={isSubmittingSurvey}
+      <div className="flex w-full min-w-0 shrink-0 flex-col gap-4">
+        <Timer
+          ref={timerRef}
+          compact={timerCompact}
+          completed={surveyVisible}
+          onFocusComplete={handleFocusComplete}
+          breakDurationMinutes={breakDurationMinutes}
+          onBreakStarted={handleBreakStarted}
+          onReturnToReady={handleReturnToReady}
+          shortDurationSeconds={shortDurationSeconds}
         />
-      ) : null}
+        {pendingSurvey ? (
+          <PostSessionSurvey
+            session={pendingSurvey}
+            isExiting={surveyExiting}
+            onSubmit={handleSurveySubmit}
+            isSubmitting={isSubmittingSurvey}
+          />
+        ) : null}
+      </div>
+      <div className="timer-layout-spacer timer-layout-spacer--expanded min-h-0 shrink basis-0" aria-hidden />
     </div>
   )
 }

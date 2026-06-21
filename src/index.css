@@ -7,6 +7,10 @@
 }
 
 @layer base {
+  html {
+    color-scheme: dark;
+  }
+
   html,
   body,
   #root {
@@ -15,34 +19,7 @@
   }
 
   body {
-    @apply h-svh font-sans text-slate-100 antialiased;
-  }
-
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
-  }
-
-  *::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  *::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  *::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.35);
-    border-radius: 9999px;
-  }
-
-  *::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.5);
-  }
-
-  *::-webkit-scrollbar-corner {
-    background: transparent;
+    @apply h-svh bg-slate-950 font-sans text-slate-100 antialiased;
   }
 
   button {
@@ -63,17 +40,90 @@
   }
 }
 
+/* Unlayered so viewport scrollbars keep custom styling over Tailwind preflight */
+*,
+html,
+body,
+#root,
+.app-shell {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+*::-webkit-scrollbar,
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar,
+.app-shell::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  background: transparent;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track-piece,
+html::-webkit-scrollbar-track,
+html::-webkit-scrollbar-track-piece,
+body::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track-piece,
+#root::-webkit-scrollbar-track,
+#root::-webkit-scrollbar-track-piece,
+.app-shell::-webkit-scrollbar-track,
+.app-shell::-webkit-scrollbar-track-piece {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb,
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+#root::-webkit-scrollbar-thumb,
+.app-shell::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.35);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:active,
+html::-webkit-scrollbar-thumb:hover,
+html::-webkit-scrollbar-thumb:active,
+body::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:active,
+#root::-webkit-scrollbar-thumb:hover,
+#root::-webkit-scrollbar-thumb:active,
+.app-shell::-webkit-scrollbar-thumb:hover,
+.app-shell::-webkit-scrollbar-thumb:active {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+*::-webkit-scrollbar-button,
+html::-webkit-scrollbar-button,
+body::-webkit-scrollbar-button,
+#root::-webkit-scrollbar-button,
+.app-shell::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+*::-webkit-scrollbar-corner,
+html::-webkit-scrollbar-corner,
+body::-webkit-scrollbar-corner,
+#root::-webkit-scrollbar-corner,
+.app-shell::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* Bundled wallpaper for offline PWA support */
 .app-shell {
   --glass-subtle-tint: rgba(55, 55, 60, 0.04);
   --glass-subtle-tint-active: rgba(255, 255, 255, 0.22);
-  --glass-subtle-border: rgba(255, 255, 255, 0.05);
-  --glass-subtle-border-active: rgba(255, 255, 255, 0.38);
+  --glass-subtle-border: rgba(255, 255, 255, 0.18);
+  --glass-subtle-border-active: rgba(255, 255, 255, 0.48);
   --glass-subtle-highlight: rgba(255, 255, 255, 0.05);
   --glass-subtle-highlight-active: rgba(255, 255, 255, 0.18);
   --glass-subtle-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   --glass-subtle-shadow-active:
-    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.16),
     0 4px 20px rgba(255, 255, 255, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.24);
   --glass-subtle-blur: blur(6px) saturate(110%);
@@ -121,6 +171,26 @@
   animation: survey-enter 0.5s ease-out;
 }
 
+/* Timer vertical centering — flex-grow tweens with the 500ms size transition */
+.timer-layout-spacer {
+  flex: 1 1 0%;
+  transition: flex-grow 500ms ease-out;
+}
+
+.timer-layout-spacer--expanded {
+  flex-grow: 1;
+}
+
+.timer-layout-spacer--collapsed {
+  flex-grow: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timer-layout-spacer {
+    transition: none;
+  }
+}
+
 .calendar-scroll {
   width: calc(100% + 1rem);
   margin-right: -1rem;
@@ -145,7 +215,7 @@
   background-color: rgba(24, 26, 32, 0.96);
   backdrop-filter: blur(16px) saturate(130%);
   -webkit-backdrop-filter: blur(16px) saturate(130%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   box-shadow:
     0 10px 28px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
@@ -279,6 +349,7 @@
 
 /* Compact layout: timer on top, planner and calendar side-by-side below */
 .app-main-layout {
+  container-type: inline-size;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
@@ -302,6 +373,51 @@
 .app-main-layout__right {
   grid-area: right;
   min-height: 0;
+}
+
+/* Compact layout (panels below timer): enforce 5:2 panel proportions; scroll the page to fit */
+@media not all and (min-width: 1024px) and (orientation: landscape) {
+  body {
+    min-height: 100svh;
+  }
+
+  .app-shell {
+    height: 100svh;
+    max-height: 100svh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .app-shell > main {
+    flex: 1 0 auto;
+    overflow: visible;
+  }
+
+  .app-main-layout {
+    grid-template-rows: auto auto;
+    overflow: visible;
+    flex: none;
+  }
+
+  .app-main-layout__left,
+  .app-main-layout__right {
+    /* height:width = 5:2 → width:height = 2:5 */
+    aspect-ratio: 2 / 5;
+    height: auto;
+    min-height: unset;
+  }
+
+  /* Span both panel columns so "Focus session N/N" stays on one line */
+  .focus-session-header-row {
+    position: relative;
+    z-index: 2;
+    width: 100cqi;
+    margin-left: -0.75rem; /* cancel LeftPanel px-3 */
+  }
+
+  .app-main-layout__left {
+    overflow: visible;
+  }
 }
 
 /* Wide landscape: classic three-column layout */
@@ -329,6 +445,11 @@
 
   .app-main-layout__center {
     container-type: inline-size;
+  }
+
+  .focus-session-header-row {
+    width: 100%;
+    margin-left: 0;
   }
 
   /* Scale countdown digits to the center rail (~3.2em wide for "30:00") */
@@ -377,8 +498,8 @@
   --cursor-light-core: rgba(255, 255, 255, 0.045);
   --cursor-light-mid: rgba(255, 255, 255, 0.018);
   --cursor-panel-border-radius: 9rem;
-  --cursor-panel-border-core: rgba(255, 255, 255, 0.16);
-  --cursor-panel-border-mid: rgba(255, 255, 255, 0.07);
+  --cursor-panel-border-core: rgba(255, 255, 255, 0.30);
+  --cursor-panel-border-mid: rgba(255, 255, 255, 0.18);
   --cursor-panel-border-glow-width: 1px;
 }
 
@@ -618,4 +739,27 @@
   .ui-surface::after {
     content: none;
   }
+}
+
+html.cursor-light-suppressed .glass-panel::before,
+html.cursor-light-suppressed .glass-panel::after,
+html.cursor-light-suppressed .glass-surface::before,
+html.cursor-light-suppressed .glass-surface::after,
+html.cursor-light-suppressed .glass-card::before,
+html.cursor-light-suppressed .glass-card::after,
+html.cursor-light-suppressed .glass-card-elevated::before,
+html.cursor-light-suppressed .glass-card-elevated::after,
+html.cursor-light-suppressed .glass-nav::before,
+html.cursor-light-suppressed .glass-nav::after,
+html.cursor-light-suppressed .glass-btn::before,
+html.cursor-light-suppressed .glass-btn::after,
+html.cursor-light-suppressed .glass-btn-secondary::before,
+html.cursor-light-suppressed .glass-btn-secondary::after,
+html.cursor-light-suppressed .glass-btn-pill::before,
+html.cursor-light-suppressed .glass-btn-pill::after,
+html.cursor-light-suppressed .glass-btn-oval::before,
+html.cursor-light-suppressed .glass-btn-oval::after,
+html.cursor-light-suppressed .ui-surface::before,
+html.cursor-light-suppressed .ui-surface::after {
+  content: none;
 }

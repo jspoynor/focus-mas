@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 export interface PendingSurveySession {
   sessionId: string
   durationMinutes: number
+  startedAt: string
 }
 
 interface PostSessionSurveyProps {
@@ -13,19 +14,22 @@ interface PostSessionSurveyProps {
 }
 
 function YesNoButtons({
-  label,
+  question,
+  hint,
   value,
   onChange,
   name,
 }: {
-  label: string
+  question: string
+  hint: string
   value: boolean | null
   onChange: (answer: boolean) => void
   name: string
 }) {
   return (
     <fieldset className="text-left">
-      <legend className="text-sm font-medium text-white">{label}</legend>
+      <legend className="text-sm font-medium leading-snug text-white">{question}</legend>
+      <p className="mt-1 text-xs leading-relaxed text-white/50">{hint}</p>
       <div className="mt-3 flex gap-2">
         {(
           [
@@ -81,21 +85,23 @@ export function PostSessionSurvey({
       }`}
       aria-label="Post-session survey"
     >
-      <h2 className="text-lg font-medium text-white">How did it go?</h2>
+      <h2 className="text-lg font-medium text-white">Quick check-in</h2>
       <p className="mt-1 text-sm text-white/60">
-        {session.durationMinutes} min session — answer both questions to continue.
+        {session.durationMinutes} min session · yes = counts against mastery
       </p>
 
       <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
         <YesNoButtons
           name="q1"
-          label="Was your focus uninterrupted?"
-          value={q1Distracted === null ? null : !q1Distracted}
-          onChange={(uninterrupted) => setQ1Distracted(!uninterrupted)}
+          question="1. Did you get distracted?"
+          hint="Mind wandered, switched tasks, or got pulled away from your plan."
+          value={q1Distracted}
+          onChange={setQ1Distracted}
         />
         <YesNoButtons
           name="q2"
-          label="Did you use your phone or social media during the focus session?"
+          question="2. Did you use your phone or social media?"
+          hint="Any check during the session counts — even a quick glance."
           value={q2UsedPhone}
           onChange={setQ2UsedPhone}
         />

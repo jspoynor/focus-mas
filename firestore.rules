@@ -2,8 +2,190 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function validStageMinutes(minutes) {
+      return minutes is number
+        && minutes >= 25
+        && minutes <= 90
+        && minutes % 5 == 0;
+    }
+
+    function validNullableTimestamp(value) {
+      return value == null || value is timestamp;
+    }
+
+    function validNullablePercent(value) {
+      return value == null || (value is number && value >= 0 && value <= 1);
+    }
+
+    function validIncompleteSessionSurveyFields(data) {
+      return data.q1Distracted == null
+        && data.q2UsedPhone == null
+        && data.distracted == null;
+    }
+
+    function validCompleteSessionSurveyFields(data) {
+      return data.q1Distracted is bool
+        && data.q2UsedPhone is bool
+        && data.distracted is bool
+        && data.distracted == (data.q1Distracted || data.q2UsedPhone);
+    }
+
+    function validSessionKeys(keys) {
+      return keys.hasOnly([
+        'startedAt',
+        'completedAt',
+        'durationMinutes',
+        'stage',
+        'q1Distracted',
+        'q2UsedPhone',
+        'distracted',
+      ]);
+    }
+
+    function validSessionCreate(data) {
+      return validSessionKeys(data.keys())
+        && data.startedAt is timestamp
+        && data.completedAt is timestamp
+        && validStageMinutes(data.durationMinutes)
+        && data.stage == data.durationMinutes
+        && validIncompleteSessionSurveyFields(data);
+    }
+
+    function validSessionDocument(data) {
+      return validSessionKeys(data.keys())
+        && data.startedAt is timestamp
+        && data.completedAt is timestamp
+        && validStageMinutes(data.durationMinutes)
+        && data.stage == data.durationMinutes
+        && (
+          validIncompleteSessionSurveyFields(data)
+          || validCompleteSessionSurveyFields(data)
+        );
+    }
+
+    function sessionImmutableFieldsUnchanged() {
+      return request.resource.data.startedAt == resource.data.startedAt
+        && request.resource.data.completedAt == resource.data.completedAt
+        && request.resource.data.durationMinutes == resource.data.durationMinutes
+        && request.resource.data.stage == resource.data.stage;
+    }
+
+    function isValidFocusSnapshot(snapshot) {
+      return snapshot is map
+        && snapshot.keys().hasOnly(['sessionId', 'planText', 'startedAt'])
+        && snapshot.sessionId is string
+        && snapshot.sessionId.size() > 0
+        && snapshot.planText is string
+        && snapshot.planText.size() <= 50000
+        && snapshot.startedAt is timestamp;
+    }
+
+    // Firestore rules disallow recursion; unroll snapshot checks (max 30 per day).
+    function validFocusSnapshots(snapshots) {
+      return snapshots is list
+        && snapshots.size() <= 30
+        && (snapshots.size() < 1 || isValidFocusSnapshot(snapshots[0]))
+        && (snapshots.size() < 2 || isValidFocusSnapshot(snapshots[1]))
+        && (snapshots.size() < 3 || isValidFocusSnapshot(snapshots[2]))
+        && (snapshots.size() < 4 || isValidFocusSnapshot(snapshots[3]))
+        && (snapshots.size() < 5 || isValidFocusSnapshot(snapshots[4]))
+        && (snapshots.size() < 6 || isValidFocusSnapshot(snapshots[5]))
+        && (snapshots.size() < 7 || isValidFocusSnapshot(snapshots[6]))
+        && (snapshots.size() < 8 || isValidFocusSnapshot(snapshots[7]))
+        && (snapshots.size() < 9 || isValidFocusSnapshot(snapshots[8]))
+        && (snapshots.size() < 10 || isValidFocusSnapshot(snapshots[9]))
+        && (snapshots.size() < 11 || isValidFocusSnapshot(snapshots[10]))
+        && (snapshots.size() < 12 || isValidFocusSnapshot(snapshots[11]))
+        && (snapshots.size() < 13 || isValidFocusSnapshot(snapshots[12]))
+        && (snapshots.size() < 14 || isValidFocusSnapshot(snapshots[13]))
+        && (snapshots.size() < 15 || isValidFocusSnapshot(snapshots[14]))
+        && (snapshots.size() < 16 || isValidFocusSnapshot(snapshots[15]))
+        && (snapshots.size() < 17 || isValidFocusSnapshot(snapshots[16]))
+        && (snapshots.size() < 18 || isValidFocusSnapshot(snapshots[17]))
+        && (snapshots.size() < 19 || isValidFocusSnapshot(snapshots[18]))
+        && (snapshots.size() < 20 || isValidFocusSnapshot(snapshots[19]))
+        && (snapshots.size() < 21 || isValidFocusSnapshot(snapshots[20]))
+        && (snapshots.size() < 22 || isValidFocusSnapshot(snapshots[21]))
+        && (snapshots.size() < 23 || isValidFocusSnapshot(snapshots[22]))
+        && (snapshots.size() < 24 || isValidFocusSnapshot(snapshots[23]))
+        && (snapshots.size() < 25 || isValidFocusSnapshot(snapshots[24]))
+        && (snapshots.size() < 26 || isValidFocusSnapshot(snapshots[25]))
+        && (snapshots.size() < 27 || isValidFocusSnapshot(snapshots[26]))
+        && (snapshots.size() < 28 || isValidFocusSnapshot(snapshots[27]))
+        && (snapshots.size() < 29 || isValidFocusSnapshot(snapshots[28]))
+        && (snapshots.size() < 30 || isValidFocusSnapshot(snapshots[29]));
+    }
+
+    function validPlannerDayKeys(keys) {
+      return keys.hasOnly(['dayPlan', 'focusSessions', 'updatedAt']);
+    }
+
+    function validPlannerDay(data) {
+      return validPlannerDayKeys(data.keys())
+        && (!('dayPlan' in data) || (data.dayPlan is string && data.dayPlan.size() <= 50000))
+        && (!('focusSessions' in data) || validFocusSnapshots(data.focusSessions))
+        && data.updatedAt is timestamp;
+    }
+
+    function validDateKey(dateKey) {
+      return dateKey.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function validProgress(data) {
+      return data.keys().hasOnly([
+        'currentStageMinutes',
+        'lastProgressionAt',
+        'prevMasteryPercent',
+        'stepBackOfferedAt',
+      ])
+        && validStageMinutes(data.currentStageMinutes)
+        && validNullableTimestamp(data.lastProgressionAt)
+        && validNullablePercent(data.prevMasteryPercent)
+        && validNullableTimestamp(data.stepBackOfferedAt);
+    }
+
+    match /users/{userId}/sessions/{sessionId} {
+      allow read: if isOwner(userId);
+
+      allow create: if isOwner(userId) && validSessionCreate(request.resource.data);
+
+      allow update: if isOwner(userId)
+        && validSessionDocument(request.resource.data)
+        && sessionImmutableFieldsUnchanged();
+
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/progress/{docId} {
+      allow read: if isOwner(userId);
+
+      allow create, update: if isOwner(userId)
+        && docId == 'main'
+        && validProgress(request.resource.data);
+
+      allow delete: if false;
+    }
+
+    match /users/{userId}/plannerDays/{dateKey} {
+      allow read: if isOwner(userId);
+
+      allow create, update: if isOwner(userId)
+        && validDateKey(dateKey)
+        && validPlannerDay(request.resource.data);
+
+      allow delete: if isOwner(userId);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

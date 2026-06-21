@@ -192,7 +192,7 @@ export function PlannerPanel() {
       </section>
 
       <section className="flex min-h-0 flex-[3] flex-col gap-2" aria-label="Focus session plan">
-        <div className="grid shrink-0 grid-cols-[2rem_1fr_2rem] items-center gap-1">
+        <div className="focus-session-header-row grid shrink-0 grid-cols-[2rem_1fr_2rem] items-center gap-1">
           <button
             type="button"
             className={`${ARROW_BUTTON_CLASS} justify-self-start`}
@@ -202,7 +202,7 @@ export function PlannerPanel() {
           >
             ‹
           </button>
-          <h2 className={`${SECTION_HEADER_CLASS} text-center`}>{focusHeader}</h2>
+          <h2 className={`${SECTION_HEADER_CLASS} text-center whitespace-nowrap`}>{focusHeader}</h2>
           <button
             type="button"
             className={`${ARROW_BUTTON_CLASS} justify-self-end`}

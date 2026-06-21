@@ -7,6 +7,7 @@ import {
   getDefaultFocusPageIndex,
   type PlannerViewMode,
 } from '../lib/plannerPages'
+import { applySurveyToSessions, type SessionSurveyUpdate } from '../lib/sessions'
 import type { FocusPlanSnapshot, FocusSession, PlannerDay, UserProgress } from '../types'
 
 export type DayPlanSaveStatus = 'idle' | 'pending' | 'saved' | 'error'
@@ -54,6 +55,7 @@ export interface AppActions {
   setUserDataStatus: (status: UserDataStatus) => void
   setProgress: (progress: UserProgress | null) => void
   setSessions: (sessions: FocusSession[]) => void
+  applySessionSurvey: (update: SessionSurveyUpdate) => void
   setActiveSessionId: (sessionId: string | null) => void
   setPendingStepBackTargetMinutes: (minutes: number | null) => void
   setDayPlanDraft: (dayPlanDraft: string) => void
@@ -111,6 +113,10 @@ export const useAppStore = create<AppStore>((set) => ({
   setUserDataStatus: (userDataStatus) => set({ userDataStatus }),
   setProgress: (progress) => set({ progress }),
   setSessions: (sessions) => set({ sessions }),
+  applySessionSurvey: (update) =>
+    set((state) => ({
+      sessions: applySurveyToSessions(state.sessions, update),
+    })),
   setActiveSessionId: (activeSessionId) => set({ activeSessionId }),
   setPendingStepBackTargetMinutes: (pendingStepBackTargetMinutes) =>
     set({ pendingStepBackTargetMinutes }),

@@ -31,11 +31,15 @@ function assertFirebaseEnv(): void {
 
   const missing = required.filter((key) => !import.meta.env[key])
 
-  if (missing.length > 0) {
-    console.warn(
-      `[firebase] Missing env vars: ${missing.join(', ')}. Auth and sync will not work until .env.local is configured.`,
-    )
+  if (missing.length === 0) return
+
+  const message = `[firebase] Missing env vars: ${missing.join(', ')}. Auth and sync will not work until they are configured.`
+
+  if (import.meta.env.PROD) {
+    throw new Error(message)
   }
+
+  console.warn(`${message} Copy .env.example to .env.local for local development.`)
 }
 
 assertFirebaseEnv()
