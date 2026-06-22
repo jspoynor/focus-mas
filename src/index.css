@@ -160,6 +160,26 @@ body::-webkit-scrollbar-corner,
   z-index: 1;
 }
 
+/* App header — three columns on wide landscape; two rows when timer stacks above panels */
+.app-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.75rem;
+}
+
+.app-header__brand {
+  justify-self: start;
+}
+
+.app-header__center {
+  justify-self: center;
+}
+
+.app-header__actions {
+  justify-self: end;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .app-shell::before {
     background-attachment: scroll;
@@ -397,6 +417,7 @@ body::-webkit-scrollbar-corner,
 .app-main-layout__left {
   grid-area: left;
   min-height: 0;
+  container-type: inline-size;
 }
 
 .app-main-layout__center {
@@ -409,8 +430,37 @@ body::-webkit-scrollbar-corner,
   min-height: 0;
 }
 
+/* Focus session pager header: wrap and scale inside narrow side panels */
+@container (max-width: 13rem) {
+  .focus-session-header-row h2 {
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+  }
+}
+
 /* Compact layout (panels below timer): enforce 5:2 panel proportions; scroll the page to fit */
 @media not all and (min-width: 1024px) and (orientation: landscape) {
+  .app-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand actions"
+      "center center";
+    row-gap: 0.375rem;
+  }
+
+  .app-header__brand {
+    grid-area: brand;
+  }
+
+  .app-header__center {
+    grid-area: center;
+    width: 100%;
+  }
+
+  .app-header__actions {
+    grid-area: actions;
+  }
+
   body {
     min-height: 100svh;
   }
@@ -440,18 +490,6 @@ body::-webkit-scrollbar-corner,
     height: auto;
     min-height: unset;
   }
-
-  /* Span both panel columns so "Focus session N/N" stays on one line */
-  .focus-session-header-row {
-    position: relative;
-    z-index: 2;
-    width: 100cqi;
-    margin-left: -0.75rem; /* cancel LeftPanel px-3 */
-  }
-
-  .app-main-layout__left {
-    overflow: visible;
-  }
 }
 
 /* Wide landscape: classic three-column layout */
@@ -473,17 +511,11 @@ body::-webkit-scrollbar-corner,
 
   .app-main-layout__left,
   .app-main-layout__right {
-    padding-top: 1rem;
     padding-bottom: 1rem;
   }
 
   .app-main-layout__center {
     container-type: inline-size;
-  }
-
-  .focus-session-header-row {
-    width: 100%;
-    margin-left: 0;
   }
 
   /* Scale countdown digits to the center rail (~3.2em wide for "30:00") */

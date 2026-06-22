@@ -32,12 +32,15 @@ export function AppLayout({ children, onCycleWallpaper }: AppLayoutProps) {
 
   return (
     <div className="app-shell flex h-svh flex-col overflow-hidden">
-      <header className="z-10 grid shrink-0 grid-cols-[1fr_auto_1fr] items-center bg-transparent px-6 py-3">
-        <p className="text-xs uppercase tracking-widest text-white/50">Focus Más</p>
-        <div className="flex items-center justify-center gap-3">
+      <header className="app-header z-10 shrink-0 bg-transparent px-4 py-3 sm:px-6">
+        <p className="app-header__brand min-w-0 truncate text-xs uppercase tracking-widest text-white/50">
+          Focus Más
+        </p>
+        <div className="app-header__center flex min-w-0 max-w-full items-center justify-center gap-2 sm:gap-3">
           <time
             dateTime={isSnapshot ? snapshotDateKey : today.toISOString().slice(0, 10)}
-            className="text-sm text-white/60"
+            className="min-w-0 truncate text-sm text-white/60"
+            title={headerLabel}
           >
             {headerLabel}
           </time>
@@ -45,15 +48,17 @@ export function AppLayout({ children, onCycleWallpaper }: AppLayoutProps) {
             <button
               type="button"
               onClick={() => void returnToToday()}
-              className="rounded-glass px-2.5 py-1 text-xs uppercase tracking-widest text-white/50 transition-colors hover:text-white/80"
+              className="shrink-0 rounded-glass px-2.5 py-1 text-xs uppercase tracking-widest text-white/50 transition-colors hover:text-white/80"
             >
               Return to today
             </button>
           ) : null}
         </div>
-        <div className="flex items-center justify-self-end gap-4">
+        <div className="app-header__actions flex min-w-0 items-center justify-end gap-2 sm:gap-4">
           {displayName ? (
-            <span className="text-xs tracking-widest text-white/50">{displayName}</span>
+            <span className="hidden max-w-[7rem] truncate text-xs tracking-widest text-white/50 min-[480px]:inline">
+              {displayName}
+            </span>
           ) : null}
           {onCycleWallpaper ? (
             <>
@@ -89,7 +94,7 @@ export function AppLayout({ children, onCycleWallpaper }: AppLayoutProps) {
           </button>
         </div>
       </header>
-      <main className="flex min-h-0 w-full flex-1 flex-col overflow-hidden px-4 py-4 sm:px-6 lg:px-8 lg:py-0">
+      <main className="flex min-h-0 w-full flex-1 flex-col overflow-hidden px-4 pt-0 pb-4 sm:px-6 lg:px-8 lg:py-0">
         {children}
       </main>
     </div>

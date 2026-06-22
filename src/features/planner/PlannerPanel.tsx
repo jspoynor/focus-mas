@@ -147,10 +147,10 @@ export function PlannerPanel() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <section className="flex min-h-0 flex-[5] flex-col gap-2" aria-label="Day plan">
-        <div className="flex shrink-0 items-baseline justify-between gap-2">
+        <div className="flex min-w-0 shrink-0 items-baseline justify-between gap-2">
           <h2
             ref={dayPlanHeaderRef}
-            className={`${SECTION_HEADER_CLASS} w-fit`}
+            className={`${SECTION_HEADER_CLASS} min-w-0 shrink truncate`}
             aria-describedby={dayPlanTooltipOpen ? dayPlanTooltipId : undefined}
             onMouseEnter={() => setDayPlanTooltipOpen(true)}
             onMouseLeave={() => setDayPlanTooltipOpen(false)}
@@ -172,7 +172,7 @@ export function PlannerPanel() {
             </p>
           </FloatingTooltip>
           {dayPlanSaveLabel && isLiveMode ? (
-            <span className="text-[10px] uppercase tracking-wider text-white/35" aria-live="polite">
+            <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/35" aria-live="polite">
               {dayPlanSaveLabel}
             </span>
           ) : null}
@@ -192,20 +192,22 @@ export function PlannerPanel() {
       </section>
 
       <section className="flex min-h-0 flex-[3] flex-col gap-2" aria-label="Focus session plan">
-        <div className="focus-session-header-row grid shrink-0 grid-cols-[2rem_1fr_2rem] items-center gap-1">
+        <div className="focus-session-header-row flex shrink-0 items-center gap-1">
           <button
             type="button"
-            className={`${ARROW_BUTTON_CLASS} justify-self-start`}
+            className={ARROW_BUTTON_CLASS}
             onClick={handleFocusGoPrev}
             disabled={!canPrev}
             aria-label="Previous focus session plan"
           >
             ‹
           </button>
-          <h2 className={`${SECTION_HEADER_CLASS} text-center whitespace-nowrap`}>{focusHeader}</h2>
+          <h2 className="min-w-0 flex-1 basis-0 text-center text-xs uppercase leading-snug tracking-widest text-balance text-white/50 [overflow-wrap:anywhere]">
+            {focusHeader}
+          </h2>
           <button
             type="button"
-            className={`${ARROW_BUTTON_CLASS} justify-self-end`}
+            className={ARROW_BUTTON_CLASS}
             onClick={handleFocusGoNext}
             disabled={!canNext}
             aria-label="Next focus session plan"
