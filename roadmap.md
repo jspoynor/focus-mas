@@ -2,6 +2,8 @@
 
 Left-panel planner: day notes + per-session focus plans, persisted in Firestore and browsable via the calendar. Each phase is a vertical slice — shippable, testable, and builds on the previous phase.
 
+**Progression model (current):** 5 consecutive clean sessions advance one focus stage; a distracted session resets the streak bar to 0. Streak is shown as a segmented bar at the bottom of the right panel. See `specs.md` §5.
+
 **Design decisions (locked):**
 
 | Decision | Choice |

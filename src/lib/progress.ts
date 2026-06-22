@@ -12,8 +12,6 @@ function progressRef(userId: string): DocumentReference {
 export const DEFAULT_PROGRESS: UserProgress = {
   currentStageMinutes: 25,
   lastProgressionAt: null,
-  prevMasteryPercent: null,
-  stepBackOfferedAt: null,
 }
 
 function parseProgressData(data: Record<string, unknown>): UserProgress {
@@ -28,15 +26,6 @@ function parseProgressData(data: Record<string, unknown>): UserProgress {
       'toDate' in data.lastProgressionAt &&
       typeof data.lastProgressionAt.toDate === 'function'
         ? (data.lastProgressionAt as { toDate: () => Date }).toDate().toISOString()
-        : null,
-    prevMasteryPercent:
-      typeof data.prevMasteryPercent === 'number' ? data.prevMasteryPercent : null,
-    stepBackOfferedAt:
-      data.stepBackOfferedAt &&
-      typeof data.stepBackOfferedAt === 'object' &&
-      'toDate' in data.stepBackOfferedAt &&
-      typeof data.stepBackOfferedAt.toDate === 'function'
-        ? (data.stepBackOfferedAt as { toDate: () => Date }).toDate().toISOString()
         : null,
   }
 }
@@ -60,8 +49,6 @@ export async function ensureUserProgress(userId: string): Promise<UserProgress> 
     await setDoc(ref, {
       currentStageMinutes: DEFAULT_PROGRESS.currentStageMinutes,
       lastProgressionAt: null,
-      prevMasteryPercent: null,
-      stepBackOfferedAt: null,
     })
     return { ...DEFAULT_PROGRESS }
   }
@@ -82,14 +69,6 @@ export async function saveUserProgress(
   if (updates.lastProgressionAt !== undefined) {
     payload.lastProgressionAt = updates.lastProgressionAt
       ? Timestamp.fromDate(new Date(updates.lastProgressionAt))
-      : null
-  }
-  if (updates.prevMasteryPercent !== undefined) {
-    payload.prevMasteryPercent = updates.prevMasteryPercent
-  }
-  if (updates.stepBackOfferedAt !== undefined) {
-    payload.stepBackOfferedAt = updates.stepBackOfferedAt
-      ? Timestamp.fromDate(new Date(updates.stepBackOfferedAt))
       : null
   }
 

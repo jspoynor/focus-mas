@@ -87,7 +87,7 @@ export function PostSessionSurvey({
     >
       <h2 className="text-lg font-medium text-white">Quick check-in</h2>
       <p className="mt-1 text-sm text-white/60">
-        {session.durationMinutes} min session · yes = counts against your focus rate
+        {session.durationMinutes} min session · yes resets your streak to 0
       </p>
 
       <form className="mt-6 space-y-6" onSubmit={handleSubmit}>

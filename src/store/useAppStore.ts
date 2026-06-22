@@ -25,8 +25,6 @@ export interface AppState {
   sessions: FocusSession[]
   /** Active focus session id while timer is running; null when idle. */
   activeSessionId: string | null
-  /** Target stage minutes when a step-back offer is active; null otherwise. */
-  pendingStepBackTargetMinutes: number | null
   dayPlanDraft: string
   focusPlanDraft: string
   focusPageIndex: number
@@ -57,7 +55,6 @@ export interface AppActions {
   setSessions: (sessions: FocusSession[]) => void
   applySessionSurvey: (update: SessionSurveyUpdate) => void
   setActiveSessionId: (sessionId: string | null) => void
-  setPendingStepBackTargetMinutes: (minutes: number | null) => void
   setDayPlanDraft: (dayPlanDraft: string) => void
   setFocusPlanDraft: (focusPlanDraft: string) => void
   setFocusPageIndex: (focusPageIndex: number) => void
@@ -91,7 +88,6 @@ const initialState: AppState = {
   progress: null,
   sessions: [],
   activeSessionId: null,
-  pendingStepBackTargetMinutes: null,
   dayPlanDraft: '',
   focusPlanDraft: '',
   focusPageIndex: 0,
@@ -118,8 +114,6 @@ export const useAppStore = create<AppStore>((set) => ({
       sessions: applySurveyToSessions(state.sessions, update),
     })),
   setActiveSessionId: (activeSessionId) => set({ activeSessionId }),
-  setPendingStepBackTargetMinutes: (pendingStepBackTargetMinutes) =>
-    set({ pendingStepBackTargetMinutes }),
   setDayPlanDraft: (dayPlanDraft) => set({ dayPlanDraft }),
   setFocusPlanDraft: (focusPlanDraft) => set({ focusPlanDraft }),
   setFocusPageIndex: (focusPageIndex) => set({ focusPageIndex }),

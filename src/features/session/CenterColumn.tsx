@@ -79,7 +79,7 @@ export function CenterColumn() {
         await withTimeout(
           runMasteryEngineAfterSession(userId),
           SURVEY_SAVE_TIMEOUT_MS,
-          'Updating focus rate',
+          'Updating progress',
         )
       } catch (err) {
         console.warn('[survey] Mastery update failed, continuing to break:', err)

@@ -25,8 +25,8 @@ export function SignInScreen() {
         <h1 className="mt-2 text-3xl font-semibold text-white">Focus Más</h1>
         <p className="mt-4 text-sm leading-relaxed text-white/75">
           Focus Más trains your attention span one session at a time. Complete
-          uninterrupted sessions to prove you&apos;ve earned your current focus
-          length — then grow into longer ones.
+          5 distraction-free sessions in a row to level up — then grow into
+          longer focus blocks.
         </p>
 
         {error ? (

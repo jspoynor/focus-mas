@@ -8,12 +8,7 @@ import {
 } from '../../lib/calendarGrid'
 import { usePlannerSnapshot } from '../../hooks/usePlannerSnapshot'
 import { surveyCompleteSessions } from '../../lib/mastery'
-import {
-  computeProjectedAdvancementDate,
-  formatProjectedDateLabel,
-  projectedDateKey,
-} from '../../lib/projectedDate'
-import { MasteryDetails, MasteryStage } from '../mastery/MasteryInsights'
+import { MasteryStage, StreakBar } from '../mastery/MasteryInsights'
 import { useAppStore } from '../../store/useAppStore'
 import { CalendarDayCell } from './CalendarDayCell'
 
@@ -25,7 +20,6 @@ const SCROLL_EDGE_MARGIN = '120px 0px'
 
 export function ContributionCalendar() {
   const sessions = useAppStore((s) => s.sessions)
-  const progress = useAppStore((s) => s.progress)
   const { openSnapshot, returnToToday } = usePlannerSnapshot()
   const scrollRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
@@ -41,21 +35,15 @@ export function ContributionCalendar() {
     const completeSessions = surveyCompleteSessions(sessions)
     const months = buildCalendarMonths(monthsBefore, monthsAfter)
     const sessionsByDay = groupSessionsByDay(completeSessions)
-    const stageMinutes = progress?.currentStageMinutes ?? 25
-    const projectedDate = computeProjectedAdvancementDate(completeSessions, stageMinutes)
-    const projectedKey = projectedDateKey(projectedDate)
-    const projectedLabel = projectedDate ? formatProjectedDateLabel(projectedDate) : null
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
     return {
       months,
       sessionsByDay,
-      projectedKey,
-      projectedLabel,
       today,
     }
-  }, [sessions, progress, monthsBefore, monthsAfter])
+  }, [sessions, monthsBefore, monthsAfter])
 
   const expandPast = useCallback(() => {
     if (isExpandingPastRef.current) return
@@ -196,8 +184,6 @@ export function ContributionCalendar() {
                             date={day}
                             sessions={daySessions}
                             isToday={isSameDay(day, calendar.today)}
-                            isProjectedDate={calendar.projectedKey === dateKey}
-                            projectedDateLabel={calendar.projectedLabel}
                             isPlannerClickable={isPlannerClickable}
                             onPlannerDayClick={handlePlannerDayClick}
                           />
@@ -212,7 +198,7 @@ export function ContributionCalendar() {
           </div>
         </div>
 
-        <MasteryDetails />
+        <StreakBar />
       </div>
     </section>
   )

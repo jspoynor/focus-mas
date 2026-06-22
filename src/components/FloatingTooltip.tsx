@@ -14,6 +14,7 @@ interface FloatingTooltipProps {
   open: boolean
   id: string
   textAlign?: 'center' | 'left'
+  maxWidthClass?: string
   children: ReactNode
 }
 
@@ -29,6 +30,7 @@ export function FloatingTooltip({
   open,
   id,
   textAlign = 'center',
+  maxWidthClass = 'max-w-52',
   children,
 }: FloatingTooltipProps) {
   const tooltipRef = useRef<HTMLDivElement>(null)
@@ -83,7 +85,7 @@ export function FloatingTooltip({
       id={id}
       role="tooltip"
       style={style ?? HIDDEN_STYLE}
-      className={`pointer-events-none z-50 w-max max-w-52 rounded-glass glass-tooltip px-3 py-2 text-xs text-white shadow-lg ${
+      className={`pointer-events-none z-50 w-max ${maxWidthClass} rounded-glass glass-tooltip px-3 py-2 text-xs text-white shadow-lg ${
         textAlign === 'left' ? 'text-left' : 'text-center'
       }`}
     >

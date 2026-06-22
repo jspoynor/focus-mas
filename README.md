@@ -51,6 +51,12 @@ At local midnight the day plan rolls over to a fresh today doc. If you're viewin
 
 Planner writes use the same Firestore offline cache as sessions — queued while offline and synced on reconnect.
 
+## Focus progression
+
+Advancement is streak-based: complete **5 focus sessions in a row** without distraction to level up (+5 min, cap 90 min). One distracted session resets the streak to 0; your focus duration never goes down.
+
+The right panel shows your current **focus level**, the contribution calendar, and a **5-segment streak bar** (`3/5`) at the bottom. Calendar day cells still show historical performance (longest session hue + daily uninterrupted opacity).
+
 ## Project structure
 
 ```

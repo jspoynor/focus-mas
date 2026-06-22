@@ -15,8 +15,6 @@ interface CalendarDayCellProps {
   date: Date
   sessions: FocusSession[]
   isToday: boolean
-  isProjectedDate: boolean
-  projectedDateLabel: string | null
   isPlannerClickable: boolean
   onPlannerDayClick?: (dateKey: string) => void
 }
@@ -25,8 +23,6 @@ export function CalendarDayCell({
   date,
   sessions,
   isToday,
-  isProjectedDate,
-  projectedDateLabel,
   isPlannerClickable,
   onPlannerDayClick,
 }: CalendarDayCellProps) {
@@ -39,21 +35,17 @@ export function CalendarDayCell({
     stats.longestDurationMinutes !== null && stats.cleanRate !== null
       ? getCalendarCellFill(stats.longestDurationMinutes, stats.cleanRate)
       : undefined
-  const isFocusable = hasSessions || isToday || isProjectedDate || isPlannerClickable
+  const isFocusable = hasSessions || isToday || isPlannerClickable
   const dateKey = toDateKey(date)
   const summaryLine = formatDaySummaryLine(stats)
 
-  const markerText = isToday
-    ? 'Today'
-    : isProjectedDate && projectedDateLabel
-      ? projectedDateLabel
-      : null
+  const markerText = isToday ? 'Today' : null
 
   const hasTooltipContent = markerText !== null || hasSessions
 
   const cellStyle = {
     ...(fillColor ? { backgroundColor: fillColor } : {}),
-    boxShadow: buildDayOutlineShadow(isToday, isProjectedDate),
+    boxShadow: buildDayOutlineShadow(isToday),
   }
 
   const cellClassName =
@@ -85,7 +77,7 @@ export function CalendarDayCell({
           type="button"
           className={`${cellSurfaceClassName} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-inset`}
           style={cellStyle}
-          aria-label={buildAriaLabel(date, stats, isToday, isProjectedDate, isPlannerClickable)}
+          aria-label={buildAriaLabel(date, stats, isToday, isPlannerClickable)}
           aria-describedby={hasTooltipContent && tooltipOpen ? tooltipId : undefined}
           onClick={
             isPlannerClickable
@@ -134,12 +126,9 @@ export function CalendarDayCell({
   )
 }
 
-function buildDayOutlineShadow(isToday: boolean, isProjectedDate: boolean): string {
+function buildDayOutlineShadow(isToday: boolean): string {
   if (isToday) {
     return `inset 0 0 0 2px ${TODAY_MARKER_COLOR}`
-  }
-  if (isProjectedDate) {
-    return 'inset 0 0 0 2px rgba(255, 255, 255, 0.9)'
   }
   return 'inset 0 0 0 1px rgba(255, 255, 255, 0.1)'
 }
@@ -148,7 +137,6 @@ function buildAriaLabel(
   date: Date,
   stats: DaySessionStats,
   isToday: boolean,
-  isProjectedDate: boolean,
   isPlannerClickable: boolean,
 ): string {
   const dateLabel = date.toLocaleDateString(undefined, {
@@ -157,7 +145,6 @@ function buildAriaLabel(
   })
   const markers = [
     isToday ? 'today' : null,
-    isProjectedDate ? 'projected advancement date' : null,
     isToday && isPlannerClickable ? 'return to live planning' : null,
     !isToday && isPlannerClickable ? 'open planner snapshot' : null,
   ].filter(Boolean)

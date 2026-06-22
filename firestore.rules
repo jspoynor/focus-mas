@@ -21,10 +21,6 @@ service cloud.firestore {
       return value == null || value is timestamp;
     }
 
-    function validNullablePercent(value) {
-      return value == null || (value is number && value >= 0 && value <= 1);
-    }
-
     function validIncompleteSessionSurveyFields(data) {
       return data.q1Distracted == null
         && data.q2UsedPhone == null
@@ -140,16 +136,9 @@ service cloud.firestore {
     }
 
     function validProgress(data) {
-      return data.keys().hasOnly([
-        'currentStageMinutes',
-        'lastProgressionAt',
-        'prevMasteryPercent',
-        'stepBackOfferedAt',
-      ])
+      return data.keys().hasAll(['currentStageMinutes', 'lastProgressionAt'])
         && validStageMinutes(data.currentStageMinutes)
-        && validNullableTimestamp(data.lastProgressionAt)
-        && validNullablePercent(data.prevMasteryPercent)
-        && validNullableTimestamp(data.stepBackOfferedAt);
+        && validNullableTimestamp(data.lastProgressionAt);
     }
 
     match /users/{userId}/sessions/{sessionId} {

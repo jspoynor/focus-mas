@@ -2,7 +2,7 @@
 
 ## 1. Core concept
 
-A single-user PWA that trains attention span by gating progression on focus performance, not a fixed timetable. Users complete Pomodoro-style focus sessions, answer a two-question post-session survey, and advance to longer focus durations only when recent performance proves they can sustain attention at the current level.
+A single-user PWA that trains attention span by gating progression on focus performance, not a fixed timetable. Users complete Pomodoro-style focus sessions, answer a two-question post-session survey, and advance to longer focus durations after **5 consecutive clean sessions** at the current level.
 
 ---
 
@@ -40,7 +40,7 @@ Break length scales with focus duration: `round(focusDurationMinutes × 0.2)` to
 | 75 min | 15 min |
 | 90 min | 20 min |
 
-One break type only — no long-break mechanic. Breaks are UI-only: no Firestore writes, no focus rate impact.
+One break type only — no long-break mechanic. Breaks are UI-only: no Firestore writes, no streak impact.
 
 ---
 
@@ -59,34 +59,44 @@ Sessions where the timer did **not** run to zero are discarded entirely — not 
 
 ## 5. Focus progression engine
 
-### 5.1 Rolling window
+### 5.1 Streak rule
 
-The engine looks back over the last **5 hours of accumulated completed focus time** (not wall-clock time). Only timer-to-zero sessions count toward the window.
+Progress toward the next stage is a **streak of 5 clean sessions in a row**:
 
-### 5.2 Advancement threshold
+- Only **timer-to-zero** sessions with a completed survey count.
+- A session is **clean** when `distracted = false` (no on either survey question).
+- A **distracted** completed session resets the streak to **0**.
+- Abandoned sessions (stopped before zero) are discarded — they do not help or hurt the streak.
 
-When `cleanSessions / totalSessionsInWindow ≥ 80%`, the user advances to the next stage. The check runs after every completed session.
+The check runs after every completed session.
 
-### 5.3 Cold start
+### 5.2 Streak scope
 
-Until 5 hours of completed sessions have accumulated, the focus rate displays as **"Building..."** with a progress bar toward the first full window. No advancement check and no projected date are shown during this period.
+The streak counts only sessions completed **since `lastProgressionAt`** (the timestamp of the user's last stage advance). When the user levels up, the streak resets to 0 and they need 5 fresh clean sessions at the new duration.
 
-### 5.4 Step-back offer
+On first use (`lastProgressionAt` is null), all completed sessions in history count.
 
-Stages are permanent — a user never loses a stage. However, if performance drops significantly, the app offers to step the timer back:
+The streak is **computed from session history** on read — not stored as a separate Firestore field.
 
-- **Trigger:** after a completed session, if `newMasteryPercent < prevMasteryPercent AND newMasteryPercent < 50%`
-- **Prompt:** *"Your recent sessions suggest this length might be a stretch. Want to step back to [stage - 5] min?"*
-- **Cadence:** fires again only when a new session pushes the percentage lower while still below 50%. If the user is below 50% but trending upward, no prompt.
-- The user's choice (accept or decline) is never forced.
+### 5.3 Advancement
 
-### 5.5 Projected advancement date
+When `currentStreak ≥ 5` and `currentStageMinutes < 90`:
 
-Once the window is full:
+1. Advance `currentStageMinutes` by 5 (cap at 90).
+2. Set `lastProgressionAt` to now (streak becomes 0 for the new level).
 
-- **If current rate ≥ 80%:** already advancing — no projected date needed.
-- **If current rate < 80%:** assume all future sessions are clean, calculate how many clean sessions push the window above 80%, estimate date from the user's average sessions-per-day. Label: *"If all upcoming sessions are clean, you could advance by [date]."*
-- The projected date updates silently after every session — no commentary, no "you lost X days."
+### 5.4 No demotion
+
+Focus levels **only go up, never down**. A distracted session resets streak progress, not the stage duration. There is no step-back offer.
+
+### 5.5 Streak bar (right panel)
+
+A **segmented bar** at the bottom of the calendar panel shows progress:
+
+- **5 segments**, filled left-to-right for each clean session in the current streak.
+- **Label:** `3/5` (or `Max level` at the 90-minute cap).
+- **Fill color:** current focus-level belt color.
+- At max level: all segments filled, label `Max level`.
 
 ---
 
@@ -133,7 +143,6 @@ cellOpacity       = 0.20 + 0.80 × uninterruptedRate
 ### 6.3 Date markers
 
 - **Today:** solid red circle around the cell (Notion-style). Hover tooltip: *"Today"*
-- **Projected advancement date:** white circle around the cell. Hover tooltip: *"Projected advancement date — if all upcoming sessions are clean"*
 
 ### 6.4 Session history tooltip
 
@@ -168,7 +177,7 @@ Clicking a **today or past** calendar cell opens **snapshot mode** for that date
 
 - **Left panel:** daily planner (see §7.2) — styled glass card, visually balanced with the right calendar panel.
 - **Center:** Pomodoro timer — dominant, large.
-- **Right panel:** contribution calendar with focus progression date markers.
+- **Right panel:** contribution calendar with focus level header and streak bar (§5.5).
 
 ### 7.2 Left panel — daily planner
 
@@ -236,7 +245,7 @@ An audio cue plays when the timer hits zero. No browser notifications.
 
 Unauthenticated users see a single screen:
 - App name: **Focus Más**
-- Description: *"Focus Más trains your attention span one session at a time. Complete distraction-free sessions to prove you've earned your current focus length — then grow into longer ones."*
+- Description: *"Focus Más trains your attention span one session at a time. Complete 5 distraction-free sessions in a row to level up — then grow into longer focus blocks."*
 - Button: **Sign in with Google**
 
 ---
@@ -261,14 +270,12 @@ Firebase Auth, Google sign-in provider only.
 | `q2UsedPhone` | boolean | Raw answer to Q2 |
 | `distracted` | boolean | Computed: `q1Distracted OR q2UsedPhone` |
 
-#### `users/{userId}/progress` (single document)
+#### `users/{userId}/progress/main` (single document)
 
 | Field | Type | Notes |
 |-------|------|-------|
 | `currentStageMinutes` | number | Active focus duration |
-| `lastProgressionAt` | timestamp \| null | Timestamp of last stage advance |
-| `prevMasteryPercent` | number \| null | Focus rate % after the previous session — used to detect declining rate |
-| `stepBackOfferedAt` | timestamp \| null | Last time step-back prompt was shown |
+| `lastProgressionAt` | timestamp \| null | Timestamp of last stage advance; streak counts sessions after this |
 
 #### `users/{userId}/plannerDays/{dateKey}`
 
@@ -308,23 +315,25 @@ Env vars (`VITE_FIREBASE_*`) — never hardcoded or committed.
 
 ---
 
-## 10. Focus rate math reference
+## 10. Progression math reference
 
 ```
-windowSessions   = completed sessions whose cumulative durationMinutes ≤ 300 (5 hours),
+STREAK_TARGET = 5
+
+relevantSessions = survey-complete sessions with completedAt > lastProgressionAt
+                   (all survey-complete sessions if lastProgressionAt is null)
                    ordered by completedAt DESC
-cleanRate        = count(distracted=false in windowSessions) / count(windowSessions)
-advancementCheck = windowSessions.count >= (300 / currentStageMinutes) AND cleanRate >= 0.80
 
-// Projected date when cleanRate < 0.80:
-cleanNeeded      = ceil(0.80 * windowSize) - currentCleanCount
-daysToAdvance    = cleanNeeded / avgSessionsPerDay
-projectedDate    = today + daysToAdvance
+currentStreak    = count consecutive clean sessions from newest backward
+                   (stop at first distracted session or when count reaches 5)
 
-// Step-back trigger (evaluated after each session):
-shouldOfferStepBack = newMasteryPercent < prevMasteryPercent AND newMasteryPercent < 0.50
+advancementCheck = currentStreak >= 5 AND currentStageMinutes < 90
 
-// Calendar cell fill (per day):
+on advance:
+  currentStageMinutes += 5 (cap 90)
+  lastProgressionAt     = now
+
+// Calendar cell fill (per day — historical, independent of streak):
 longestMinutes     = max(durationMinutes) among that day's completed sessions
 uninterruptedRate  = count(distracted=false) / count(sessions that day)
 cellHue            = beltColor(stageAligned(longestMinutes))   // clamp 25–90 min ladder

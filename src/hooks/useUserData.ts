@@ -12,7 +12,6 @@ export function useUserData() {
       setUserDataStatus,
       setProgress,
       setSessions,
-      setPendingStepBackTargetMinutes,
       hydrateLivePlannerDay,
       resetPlannerState,
     } = useAppStore.getState()
@@ -21,7 +20,6 @@ export function useUserData() {
       setUserDataStatus('idle')
       setProgress(null)
       setSessions([])
-      setPendingStepBackTargetMinutes(null)
       resetPlannerState()
       return
     }

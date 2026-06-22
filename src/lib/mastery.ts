@@ -1,20 +1,9 @@
 import type { FocusSession } from '../types'
 
-export const WINDOW_MINUTES = 300
-export const ADVANCEMENT_THRESHOLD = 0.8
-export const STEP_BACK_THRESHOLD = 0.5
+export const STREAK_TARGET = 5
 export const MIN_STAGE_MINUTES = 25
 export const MAX_STAGE_MINUTES = 90
 export const STAGE_INCREMENT = 5
-
-export interface RollingWindowResult {
-  sessions: FocusSession[]
-  totalMinutes: number
-  sessionCount: number
-  cleanCount: number
-  cleanRate: number
-  isFull: boolean
-}
 
 /** Sessions with survey answers, newest first. */
 export function surveyCompleteSessions(sessions: FocusSession[]): FocusSession[] {
@@ -26,71 +15,45 @@ export function surveyCompleteSessions(sessions: FocusSession[]): FocusSession[]
   )
 }
 
-export function computeRollingWindow(sessions: FocusSession[]): RollingWindowResult {
-  const sorted = [...surveyCompleteSessions(sessions)].sort(
+function sessionsSinceProgression(
+  sessions: FocusSession[],
+  lastProgressionAt: string | null,
+): FocusSession[] {
+  const complete = surveyCompleteSessions(sessions)
+  if (!lastProgressionAt) return complete
+
+  const cutoff = new Date(lastProgressionAt).getTime()
+  return complete.filter((session) => new Date(session.completedAt).getTime() > cutoff)
+}
+
+/** Consecutive clean sessions since last progression, counting backward from newest (0–5). */
+export function computeCurrentStreak(
+  sessions: FocusSession[],
+  lastProgressionAt: string | null,
+): number {
+  const relevant = sessionsSinceProgression(sessions, lastProgressionAt)
+  const sorted = [...relevant].sort(
     (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
   )
 
-  const windowSessions: FocusSession[] = []
-  let totalMinutes = 0
-
+  let streak = 0
   for (const session of sorted) {
-    windowSessions.push(session)
-    totalMinutes += session.durationMinutes
-    if (totalMinutes >= WINDOW_MINUTES) break
+    if (session.distracted) break
+    streak++
+    if (streak >= STREAK_TARGET) break
   }
 
-  const sessionCount = windowSessions.length
-  const cleanCount = windowSessions.filter((session) => !session.distracted).length
-  const cleanRate = sessionCount > 0 ? cleanCount / sessionCount : 0
-
-  return {
-    sessions: windowSessions,
-    totalMinutes,
-    sessionCount,
-    cleanCount,
-    cleanRate,
-    isFull: totalMinutes >= WINDOW_MINUTES,
-  }
+  return streak
 }
 
-export function minSessionsForFullWindow(currentStageMinutes: number): number {
-  return Math.ceil(WINDOW_MINUTES / currentStageMinutes)
-}
-
-export function canAdvance(
-  window: RollingWindowResult,
-  currentStageMinutes: number,
-): boolean {
-  if (!window.isFull) return false
-  if (currentStageMinutes >= MAX_STAGE_MINUTES) return false
-  if (window.cleanRate < ADVANCEMENT_THRESHOLD) return false
-  return window.sessionCount >= minSessionsForFullWindow(currentStageMinutes)
+export function canAdvance(streak: number, currentStageMinutes: number): boolean {
+  return streak >= STREAK_TARGET && currentStageMinutes < MAX_STAGE_MINUTES
 }
 
 export function nextStageMinutes(currentStageMinutes: number): number {
   return Math.min(currentStageMinutes + STAGE_INCREMENT, MAX_STAGE_MINUTES)
 }
 
-export function previousStageMinutes(currentStageMinutes: number): number {
-  return Math.max(currentStageMinutes - STAGE_INCREMENT, MIN_STAGE_MINUTES)
-}
-
-export function shouldOfferStepBack(
-  newMasteryPercent: number,
-  prevMasteryPercent: number | null,
-): boolean {
-  if (prevMasteryPercent === null) return false
-  return (
-    newMasteryPercent < prevMasteryPercent &&
-    newMasteryPercent < STEP_BACK_THRESHOLD
-  )
-}
-
-export function buildingProgressPercent(totalMinutes: number): number {
-  return Math.min(100, Math.round((totalMinutes / WINDOW_MINUTES) * 100))
-}
-
-export function formatMasteryPercent(cleanRate: number): string {
-  return `${Math.round(cleanRate * 100)}%`
+export function isAtMaxStage(currentStageMinutes: number): boolean {
+  return currentStageMinutes >= MAX_STAGE_MINUTES
 }

@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  computeCurrentStreak,
   MAX_STAGE_MINUTES,
   MIN_STAGE_MINUTES,
   STAGE_INCREMENT,
-  WINDOW_MINUTES,
-  computeRollingWindow,
-  formatMasteryPercent,
+  STREAK_TARGET,
 } from '../lib/mastery'
 import { refreshUserData } from '../lib/refreshUserData'
 import { countUserSessions, resetUserAccount } from '../lib/resetAccount'
@@ -35,43 +34,36 @@ function datetimeLocalToIso(value: string): string | null {
 function progressFormFromStore(progress: UserProgress) {
   return {
     currentStageMinutes: progress.currentStageMinutes,
-    prevMasteryPercent:
-      progress.prevMasteryPercent !== null
-        ? String(Math.round(progress.prevMasteryPercent * 100))
-        : '',
     lastProgressionAt: isoToDatetimeLocal(progress.lastProgressionAt),
-    stepBackOfferedAt: isoToDatetimeLocal(progress.stepBackOfferedAt),
   }
 }
 
-function RollingWindowSummary() {
+function StreakSummary() {
   const sessions = useAppStore((s) => s.sessions)
+  const progress = useAppStore((s) => s.progress)
 
-  const window = useMemo(() => computeRollingWindow(sessions), [sessions])
+  const streak = useMemo(
+    () => computeCurrentStreak(sessions, progress?.lastProgressionAt ?? null),
+    [sessions, progress?.lastProgressionAt],
+  )
 
   return (
     <div className="rounded-glass border border-white/10 bg-white/5 p-4 backdrop-blur-md">
-      <p className="text-xs uppercase tracking-widest text-white/50">Rolling window</p>
+      <p className="text-xs uppercase tracking-widest text-white/50">Streak</p>
       <dl className="mt-3 space-y-2 text-sm">
         <div className="flex justify-between gap-4">
-          <dt className="text-white/60">Accumulated focus time</dt>
+          <dt className="text-white/60">Current streak</dt>
           <dd className="font-mono text-white/90">
-            {window.totalMinutes} / {WINDOW_MINUTES} min
+            {streak} / {STREAK_TARGET}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-white/60">Uninterrupted rate</dt>
+          <dt className="text-white/60">Last progression at</dt>
           <dd className="font-mono text-white/90">
-            {window.sessionCount > 0 ? formatMasteryPercent(window.cleanRate) : '—'}
+            {progress?.lastProgressionAt
+              ? new Date(progress.lastProgressionAt).toLocaleString()
+              : '—'}
           </dd>
-        </div>
-        <div className="flex justify-between gap-4">
-          <dt className="text-white/60">Sessions in window</dt>
-          <dd className="font-mono text-white/90">{window.sessionCount}</dd>
-        </div>
-        <div className="flex justify-between gap-4">
-          <dt className="text-white/60">Window full</dt>
-          <dd className="font-mono text-white/90">{window.isFull ? 'Yes' : 'No'}</dd>
         </div>
       </dl>
     </div>
@@ -99,16 +91,9 @@ function ProgressEditor() {
     setSaving(true)
     setSaveMessage(null)
     try {
-      const prevMastery =
-        form.prevMasteryPercent.trim() === ''
-          ? null
-          : Math.min(100, Math.max(0, Number(form.prevMasteryPercent))) / 100
-
       await saveUserProgress(userId, {
         currentStageMinutes: form.currentStageMinutes,
-        prevMasteryPercent: prevMastery,
         lastProgressionAt: datetimeLocalToIso(form.lastProgressionAt),
-        stepBackOfferedAt: datetimeLocalToIso(form.stepBackOfferedAt),
       })
       await refreshUserData(userId)
       setSaveMessage('Saved.')
@@ -142,34 +127,11 @@ function ProgressEditor() {
         </label>
 
         <label className="block text-sm">
-          <span className="text-white/60">Previous focus rate % (empty = null)</span>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={form.prevMasteryPercent}
-            onChange={(e) => setForm((f) => ({ ...f, prevMasteryPercent: e.target.value }))}
-            placeholder="e.g. 85"
-            className="mt-1 w-full rounded-glass border border-white/15 bg-black/30 px-2 py-1.5 text-white placeholder:text-white/30"
-          />
-        </label>
-
-        <label className="block text-sm">
           <span className="text-white/60">Last progression at (empty = null)</span>
           <input
             type="datetime-local"
             value={form.lastProgressionAt}
             onChange={(e) => setForm((f) => ({ ...f, lastProgressionAt: e.target.value }))}
-            className="mt-1 w-full rounded-glass border border-white/15 bg-black/30 px-2 py-1.5 text-white"
-          />
-        </label>
-
-        <label className="block text-sm">
-          <span className="text-white/60">Step-back offered at (empty = null)</span>
-          <input
-            type="datetime-local"
-            value={form.stepBackOfferedAt}
-            onChange={(e) => setForm((f) => ({ ...f, stepBackOfferedAt: e.target.value }))}
             className="mt-1 w-full rounded-glass border border-white/15 bg-black/30 px-2 py-1.5 text-white"
           />
         </label>
@@ -275,10 +237,8 @@ function ResetAccountSection() {
             {plannerDayCount === 1 ? '' : 's'}
           </li>
           <li>
-            Reset progress: <code className="text-white/90">currentStageMinutes</code> → 25,
-            null <code className="text-white/90">lastProgressionAt</code>,{' '}
-            <code className="text-white/90">prevMasteryPercent</code>,{' '}
-            <code className="text-white/90">stepBackOfferedAt</code>
+            Reset progress: <code className="text-white/90">currentStageMinutes</code> → 25, null{' '}
+            <code className="text-white/90">lastProgressionAt</code>
           </li>
         </ul>
       </DevConfirmModal>
@@ -306,7 +266,7 @@ export function AdminPage() {
         <p className="text-sm text-white/50">Loading user data…</p>
       ) : (
         <>
-          <RollingWindowSummary />
+          <StreakSummary />
           <ProgressEditor />
           <ResetAccountSection />
         </>
