@@ -35,6 +35,8 @@ export function PlannerPanel() {
   const dayPlanTooltipId = useId()
 
   const dayPlanDraft = useAppStore((s) => s.dayPlanDraft)
+  const snapshotDateKey = useAppStore((s) => s.snapshotDateKey)
+  const liveDateKey = useAppStore((s) => s.liveDateKey)
   const focusPlanDraft = useAppStore((s) => s.focusPlanDraft)
   const focusPageIndex = useAppStore((s) => s.focusPageIndex)
   const focusSnapshots = useAppStore((s) => s.focusSnapshots)
@@ -188,6 +190,11 @@ export function PlannerPanel() {
           ) : null}
         </div>
         <PlannerMarkdownEditor
+          key={
+            isLiveMode
+              ? `day-plan-live-${liveDateKey}`
+              : `day-plan-snapshot-${snapshotDateKey ?? 'unknown'}`
+          }
           className={PLANNER_TEXTAREA_CLASS}
           value={dayPlanDraft}
           onChange={(nextValue) => {

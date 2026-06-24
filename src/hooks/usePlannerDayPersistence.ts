@@ -6,6 +6,83 @@ import { useAppStore } from '../store/useAppStore'
 const DAY_PLAN_SAVE_DEBOUNCE_MS = 2_000
 const SAVED_INDICATOR_MS = 2_000
 
+let dayPlanDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let savedIndicatorTimer: ReturnType<typeof setTimeout> | null = null
+let lastPersistedDayPlan: { dateKey: string; dayPlan: string } | null = null
+let inFlightDayPlanSave: Promise<void> | null = null
+
+function clearDayPlanDebounceTimer() {
+  if (dayPlanDebounceTimer) {
+    clearTimeout(dayPlanDebounceTimer)
+    dayPlanDebounceTimer = null
+  }
+}
+
+function clearSavedIndicatorTimer() {
+  if (savedIndicatorTimer) {
+    clearTimeout(savedIndicatorTimer)
+    savedIndicatorTimer = null
+  }
+}
+
+async function persistDayPlan(targetUserId: string, dateKey: string, dayPlan: string) {
+  const last = lastPersistedDayPlan
+  if (last?.dateKey === dateKey && last.dayPlan === dayPlan) {
+    return
+  }
+
+  const { setDayPlanSaveStatus } = useAppStore.getState()
+  setDayPlanSaveStatus('pending')
+
+  const savePromise = saveDayPlan(targetUserId, dateKey, dayPlan)
+    .then(() => {
+      lastPersistedDayPlan = { dateKey, dayPlan }
+      setDayPlanSaveStatus('saved')
+      clearSavedIndicatorTimer()
+      savedIndicatorTimer = setTimeout(() => {
+        const { dayPlanSaveStatus } = useAppStore.getState()
+        if (dayPlanSaveStatus === 'saved') {
+          setDayPlanSaveStatus('idle')
+        }
+      }, SAVED_INDICATOR_MS)
+    })
+    .catch((err) => {
+      console.warn('[planner] Day plan save failed:', err)
+      setDayPlanSaveStatus('error')
+    })
+    .finally(() => {
+      if (inFlightDayPlanSave === savePromise) {
+        inFlightDayPlanSave = null
+      }
+    })
+
+  inFlightDayPlanSave = savePromise
+  await savePromise
+}
+
+async function flushPendingDayPlanSave() {
+  clearDayPlanDebounceTimer()
+
+  const state = useAppStore.getState()
+  if (state.authStatus !== 'signed-in' || !state.userId || state.userDataStatus !== 'ready') {
+    return
+  }
+  if (state.plannerViewMode !== 'live') {
+    return
+  }
+
+  await persistDayPlan(state.userId, state.liveDateKey, state.liveDayPlanDraft)
+
+  if (inFlightDayPlanSave) {
+    await inFlightDayPlanSave
+  }
+}
+
+/** Flush any pending live day-plan write before leaving today (e.g. opening a snapshot). */
+export async function flushPendingLiveDayPlanSave(): Promise<void> {
+  await flushPendingDayPlanSave()
+}
+
 let focusSnapshotDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
 function clearFocusSnapshotDebounceTimer() {
@@ -56,92 +133,20 @@ function msUntilNextLocalMidnight(): number {
 
 /** Debounced day-plan writes and local-midnight rollover for live today mode. */
 export function usePlannerDayPersistence() {
-  const dayPlanDraft = useAppStore((s) => s.dayPlanDraft)
+  const liveDayPlanDraft = useAppStore((s) => s.liveDayPlanDraft)
   const liveDateKey = useAppStore((s) => s.liveDateKey)
   const plannerViewMode = useAppStore((s) => s.plannerViewMode)
   const userDataStatus = useAppStore((s) => s.userDataStatus)
   const authStatus = useAppStore((s) => s.authStatus)
   const userId = useAppStore((s) => s.userId)
 
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const savedIndicatorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const lastPersistedRef = useRef<{ dateKey: string; dayPlan: string } | null>(null)
-  const inFlightSaveRef = useRef<Promise<void> | null>(null)
-
-  const clearDebounceTimer = () => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current)
-      debounceTimerRef.current = null
-    }
-  }
-
-  const clearSavedIndicatorTimer = () => {
-    if (savedIndicatorTimerRef.current) {
-      clearTimeout(savedIndicatorTimerRef.current)
-      savedIndicatorTimerRef.current = null
-    }
-  }
-
-  const persistDayPlan = async (targetUserId: string, dateKey: string, dayPlan: string) => {
-    const last = lastPersistedRef.current
-    if (last?.dateKey === dateKey && last.dayPlan === dayPlan) {
-      return
-    }
-
-    const { setDayPlanSaveStatus } = useAppStore.getState()
-    setDayPlanSaveStatus('pending')
-
-    const savePromise = saveDayPlan(targetUserId, dateKey, dayPlan)
-      .then(() => {
-        lastPersistedRef.current = { dateKey, dayPlan }
-        setDayPlanSaveStatus('saved')
-        clearSavedIndicatorTimer()
-        savedIndicatorTimerRef.current = setTimeout(() => {
-          const { dayPlanSaveStatus } = useAppStore.getState()
-          if (dayPlanSaveStatus === 'saved') {
-            setDayPlanSaveStatus('idle')
-          }
-        }, SAVED_INDICATOR_MS)
-      })
-      .catch((err) => {
-        console.warn('[planner] Day plan save failed:', err)
-        setDayPlanSaveStatus('error')
-      })
-      .finally(() => {
-        if (inFlightSaveRef.current === savePromise) {
-          inFlightSaveRef.current = null
-        }
-      })
-
-    inFlightSaveRef.current = savePromise
-    await savePromise
-  }
-
-  const flushPendingDayPlanSave = async () => {
-    clearDebounceTimer()
-
-    const state = useAppStore.getState()
-    if (state.authStatus !== 'signed-in' || !state.userId || state.userDataStatus !== 'ready') {
-      return
-    }
-    if (state.plannerViewMode !== 'live') {
-      return
-    }
-
-    await persistDayPlan(state.userId, state.liveDateKey, state.dayPlanDraft)
-
-    if (inFlightSaveRef.current) {
-      await inFlightSaveRef.current
-    }
-  }
-
   const prevUserDataStatusRef = useRef(userDataStatus)
   useEffect(() => {
     if (prevUserDataStatusRef.current !== 'ready' && userDataStatus === 'ready') {
       const state = useAppStore.getState()
-      lastPersistedRef.current = {
+      lastPersistedDayPlan = {
         dateKey: state.liveDateKey,
-        dayPlan: state.dayPlanDraft,
+        dayPlan: state.liveDayPlanDraft,
       }
     }
     prevUserDataStatusRef.current = userDataStatus
@@ -154,33 +159,35 @@ export function usePlannerDayPersistence() {
       userDataStatus !== 'ready' ||
       plannerViewMode !== 'live'
     ) {
-      clearDebounceTimer()
+      clearDayPlanDebounceTimer()
       return
     }
 
-    const last = lastPersistedRef.current
-    if (last?.dateKey === liveDateKey && last.dayPlan === dayPlanDraft) {
+    const last = lastPersistedDayPlan
+    if (last?.dateKey === liveDateKey && last.dayPlan === liveDayPlanDraft) {
       return
     }
 
-    clearDebounceTimer()
-    debounceTimerRef.current = setTimeout(() => {
-      void persistDayPlan(userId, liveDateKey, dayPlanDraft)
+    clearDayPlanDebounceTimer()
+    dayPlanDebounceTimer = setTimeout(() => {
+      dayPlanDebounceTimer = null
+      const state = useAppStore.getState()
+      void persistDayPlan(state.userId!, state.liveDateKey, state.liveDayPlanDraft)
     }, DAY_PLAN_SAVE_DEBOUNCE_MS)
 
-    return clearDebounceTimer
-  }, [authStatus, userId, userDataStatus, plannerViewMode, liveDateKey, dayPlanDraft])
+    return clearDayPlanDebounceTimer
+  }, [authStatus, userId, userDataStatus, plannerViewMode, liveDateKey, liveDayPlanDraft])
 
   useEffect(() => {
     if (authStatus !== 'signed-in') {
-      lastPersistedRef.current = null
-      clearDebounceTimer()
+      lastPersistedDayPlan = null
+      clearDayPlanDebounceTimer()
       clearSavedIndicatorTimer()
     }
   }, [authStatus])
 
   useEffect(() => {
-    lastPersistedRef.current = null
+    lastPersistedDayPlan = null
   }, [userId])
 
   useEffect(() => {
@@ -197,10 +204,11 @@ export function usePlannerDayPersistence() {
 
       if (state.plannerViewMode === 'snapshot') {
         state.setLiveDateKey(newDateKey)
+        useAppStore.setState({ liveDayPlanDraft: '' })
         return
       }
 
-      clearDebounceTimer()
+      clearDayPlanDebounceTimer()
       const beforeFlush = useAppStore.getState()
       if (
         beforeFlush.authStatus === 'signed-in' &&
@@ -211,10 +219,10 @@ export function usePlannerDayPersistence() {
         await persistDayPlan(
           beforeFlush.userId,
           beforeFlush.liveDateKey,
-          beforeFlush.dayPlanDraft,
+          beforeFlush.liveDayPlanDraft,
         )
-        if (inFlightSaveRef.current) {
-          await inFlightSaveRef.current
+        if (inFlightDayPlanSave) {
+          await inFlightDayPlanSave
         }
         await flushPendingFocusSnapshotSave()
       }
@@ -222,11 +230,12 @@ export function usePlannerDayPersistence() {
       const latest = useAppStore.getState()
       if (latest.plannerViewMode === 'snapshot') {
         latest.setLiveDateKey(newDateKey)
+        useAppStore.setState({ liveDayPlanDraft: '' })
         return
       }
 
       latest.applyLiveMidnightRollover()
-      lastPersistedRef.current = { dateKey: newDateKey, dayPlan: '' }
+      lastPersistedDayPlan = { dateKey: newDateKey, dayPlan: '' }
     }
 
     const scheduleMidnightRollover = () => {
@@ -250,7 +259,7 @@ export function usePlannerDayPersistence() {
 
   useEffect(
     () => () => {
-      clearDebounceTimer()
+      clearDayPlanDebounceTimer()
       clearSavedIndicatorTimer()
       void flushPendingDayPlanSave()
       void flushPendingFocusSnapshotSave()

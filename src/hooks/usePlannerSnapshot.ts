@@ -1,25 +1,8 @@
 import { useCallback } from 'react'
 import { toDateKey } from '../lib/calendarGrid'
-import { emptyPlannerDay, loadPlannerDay, saveDayPlan } from '../lib/plannerDays'
+import { emptyPlannerDay, loadPlannerDay } from '../lib/plannerDays'
+import { flushPendingLiveDayPlanSave } from './usePlannerDayPersistence'
 import { useAppStore } from '../store/useAppStore'
-
-async function flushLiveDayPlanIfNeeded(): Promise<void> {
-  const state = useAppStore.getState()
-  if (
-    state.authStatus !== 'signed-in' ||
-    !state.userId ||
-    state.userDataStatus !== 'ready' ||
-    state.plannerViewMode !== 'live'
-  ) {
-    return
-  }
-
-  try {
-    await saveDayPlan(state.userId, state.liveDateKey, state.dayPlanDraft)
-  } catch (err) {
-    console.warn('[planner] Failed to flush day plan before snapshot:', err)
-  }
-}
 
 /** Past calendar days open read-only snapshots; today returns to live planning. */
 export function usePlannerSnapshot() {
@@ -30,7 +13,7 @@ export function usePlannerSnapshot() {
     async (dateKey: string) => {
       if (!userId || userDataStatus !== 'ready') return
 
-      await flushLiveDayPlanIfNeeded()
+      await flushPendingLiveDayPlanSave()
 
       let plannerDay
       try {
@@ -49,15 +32,20 @@ export function usePlannerSnapshot() {
     if (!userId || userDataStatus !== 'ready') return
 
     const todayKey = toDateKey(new Date())
+    const { liveDayPlanDraft } = useAppStore.getState()
 
     try {
       const plannerDay = await loadPlannerDay(userId, todayKey)
-      useAppStore.getState().hydrateLivePlannerDay(plannerDay)
+      useAppStore.getState().hydrateLivePlannerDay({
+        ...plannerDay,
+        dateKey: todayKey,
+        dayPlan: liveDayPlanDraft,
+      })
     } catch (err) {
       console.warn('[planner] Failed to restore live planner day:', err)
       useAppStore.getState().hydrateLivePlannerDay({
         dateKey: todayKey,
-        dayPlan: '',
+        dayPlan: liveDayPlanDraft,
         focusSessions: [],
         updatedAt: null,
       })

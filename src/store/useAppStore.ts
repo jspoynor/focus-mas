@@ -26,6 +26,8 @@ export interface AppState {
   /** Active focus session id while timer is running; null when idle. */
   activeSessionId: string | null
   dayPlanDraft: string
+  /** Today's live day plan; kept while browsing past-day snapshots. */
+  liveDayPlanDraft: string
   focusPlanDraft: string
   focusPageIndex: number
   focusSnapshots: FocusPlanSnapshot[]
@@ -90,6 +92,7 @@ const initialState: AppState = {
   sessions: [],
   activeSessionId: null,
   dayPlanDraft: '',
+  liveDayPlanDraft: '',
   focusPlanDraft: '',
   focusPageIndex: 0,
   focusSnapshots: [],
@@ -115,7 +118,12 @@ export const useAppStore = create<AppStore>((set) => ({
       sessions: applySurveyToSessions(state.sessions, update),
     })),
   setActiveSessionId: (activeSessionId) => set({ activeSessionId }),
-  setDayPlanDraft: (dayPlanDraft) => set({ dayPlanDraft }),
+  setDayPlanDraft: (dayPlanDraft) =>
+    set((state) =>
+      state.plannerViewMode === 'live'
+        ? { dayPlanDraft, liveDayPlanDraft: dayPlanDraft }
+        : { dayPlanDraft },
+    ),
   setFocusPlanDraft: (focusPlanDraft) => set({ focusPlanDraft }),
   setFocusPageIndex: (focusPageIndex) => set({ focusPageIndex }),
   setFocusSnapshots: (focusSnapshots) =>
@@ -201,6 +209,7 @@ export const useAppStore = create<AppStore>((set) => ({
       snapshotDateKey: null,
       liveDateKey: plannerDay.dateKey,
       dayPlanDraft: plannerDay.dayPlan,
+      liveDayPlanDraft: plannerDay.dayPlan,
       focusSnapshots: plannerDay.focusSessions,
       focusPlanDraft: '',
       focusDraftSlotVisible: true,
@@ -221,6 +230,7 @@ export const useAppStore = create<AppStore>((set) => ({
   resetPlannerState: () =>
     set({
       dayPlanDraft: '',
+      liveDayPlanDraft: '',
       focusPlanDraft: '',
       focusPageIndex: 0,
       focusSnapshots: [],
@@ -237,6 +247,7 @@ export const useAppStore = create<AppStore>((set) => ({
     set({
       liveDateKey: toDateKey(new Date()),
       dayPlanDraft: '',
+      liveDayPlanDraft: '',
       focusPlanDraft: '',
       focusSnapshots: [],
       focusDraftSlotVisible: true,

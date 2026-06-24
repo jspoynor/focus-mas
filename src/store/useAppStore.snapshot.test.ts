@@ -7,10 +7,23 @@ describe('planner snapshot mode for today', () => {
       plannerViewMode: 'live',
       snapshotDateKey: null,
       dayPlanDraft: 'live draft',
+      liveDayPlanDraft: 'live draft',
       focusPlanDraft: 'focus draft',
       focusSnapshots: [],
       focusPageIndex: 0,
     })
+  })
+
+  it('preserves the live day plan while browsing a snapshot', () => {
+    useAppStore.getState().hydrateSnapshotPlannerDay({
+      dateKey: '2026-06-18',
+      dayPlan: 'yesterday',
+      focusSessions: [],
+      updatedAt: null,
+    })
+
+    expect(useAppStore.getState().dayPlanDraft).toBe('yesterday')
+    expect(useAppStore.getState().liveDayPlanDraft).toBe('live draft')
   })
 
   it('returns to live planning when today is selected from the calendar', () => {
@@ -32,6 +45,7 @@ describe('planner snapshot mode for today', () => {
     expect(state.plannerViewMode).toBe('live')
     expect(state.snapshotDateKey).toBeNull()
     expect(state.dayPlanDraft).toBe('saved plan')
+    expect(state.liveDayPlanDraft).toBe('saved plan')
   })
 
   it('returns to live planning only via hydrateLivePlannerDay', () => {
