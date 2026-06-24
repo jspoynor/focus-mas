@@ -2,7 +2,8 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useSta
 import { breakMinutes } from '../../lib/breakDuration'
 import { formatCountdown } from '../../lib/formatCountdown'
 import { appendFocusSnapshot, removeFocusSnapshot } from '../../lib/plannerDays'
-import { playSessionCompleteCue } from '../../lib/sessionAudio'
+import { startSessionCompleteAlert } from '../../lib/sessionAlerts'
+import { readDesktopNotificationsDesired } from '../../lib/sessionNotificationsPreference'
 import { completeSession, createSessionRef } from '../../lib/sessions'
 import { useAppStore, type TimerMode } from '../../store/useAppStore'
 import type { PendingSurveySession } from '../survey/PostSessionSurvey'
@@ -127,7 +128,10 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
     sessionStartedAtRef.current = null
     setActiveSessionId(null)
 
-    playSessionCompleteCue()
+    startSessionCompleteAlert({
+      durationMinutes: duration,
+      desktopNotificationsDesired: readDesktopNotificationsDesired(),
+    })
 
     if (userId && sessionId && startedAt) {
       finishFocusSession(sessionId, duration, startedAtIso)

@@ -232,9 +232,19 @@ Writes use the same offline persistence as sessions; queued while offline and sy
 
 When the timer hits zero, the survey slides up from the bottom of the center column. The timer shrinks upward to make room. Both coexist vertically in the center panel until the survey is submitted.
 
-### 7.4 Audio
+### 7.4 Session-complete alerts
 
-An audio cue plays when the timer hits zero. No browser notifications.
+When a focus session timer hits zero, a two-tone audio cue plays and **repeats every 4 seconds** until the user dismisses it (any pointer click in the app, or clicking the desktop notification) or **15 minutes** elapse. Repeating audio is always on; it does not depend on the notification bell.
+
+**Header bell (left):** optional desktop notifications, persisted in `localStorage` per browser.
+
+| Bell state | Repeating audio | Desktop notification |
+|------------|-----------------|----------------------|
+| Off (default) | Yes | No |
+| On + permission granted | Yes | Yes — title *Focus session complete*, body includes duration |
+| On + permission denied | Yes | No — bell shows blocked state |
+
+Permission is requested only when the user turns the bell on. Break timer end does not trigger alerts.
 
 ### 7.5 App header — date and snapshot
 

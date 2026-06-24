@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type ReactNode } from 'react'
 import { FloatingTooltip } from './FloatingTooltip'
+import { NotificationBell } from './NotificationBell'
 import { dateFromDateKey } from '../lib/calendarGrid'
 import { signOut } from '../lib/auth'
 import { formatLongDateWithOrdinal } from '../lib/formatDate'
@@ -33,9 +34,12 @@ export function AppLayout({ children, onCycleWallpaper }: AppLayoutProps) {
   return (
     <div className="app-shell flex h-svh flex-col overflow-hidden">
       <header className="app-header z-10 shrink-0 bg-transparent px-4 py-3 sm:px-6">
-        <p className="app-header__brand min-w-0 truncate text-xs uppercase tracking-widest text-white/50">
-          Focus Más
-        </p>
+        <div className="app-header__brand flex min-w-0 items-center gap-2">
+          <NotificationBell />
+          <p className="min-w-0 truncate text-xs uppercase tracking-widest text-white/50">
+            Focus Más
+          </p>
+        </div>
         <div className="app-header__center flex min-w-0 max-w-full items-center justify-center gap-2 sm:gap-3">
           <time
             dateTime={isSnapshot ? snapshotDateKey : today.toISOString().slice(0, 10)}
