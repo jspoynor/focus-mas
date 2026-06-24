@@ -70,9 +70,13 @@ export function formatUninterruptedPercent(uninterruptedRate: number): string {
   return `${Math.round(uninterruptedRate * 100)}%`
 }
 
+export function formatSessionCount(count: number): string {
+  return count === 1 ? '1 session' : `${count} sessions`
+}
+
 export function formatDaySummaryLine(stats: DaySessionStats): string | null {
-  if (stats.longestDurationMinutes === null || stats.cleanRate === null) return null
-  return `Longest: ${stats.longestDurationMinutes} min · ${formatUninterruptedPercent(stats.cleanRate)} uninterrupted`
+  if (stats.completedCount === 0 || stats.cleanRate === null) return null
+  return `${formatSessionCount(stats.completedCount)} · ${formatUninterruptedPercent(stats.cleanRate)} uninterrupted`
 }
 
 /** Seven full months centered on today: monthsBefore + current + monthsAfter. */
@@ -146,10 +150,14 @@ export function isSameDay(a: Date, b: Date): boolean {
   return toDateKey(a) === toDateKey(b)
 }
 
-export function formatSessionAnswer(value: boolean): string {
+function formatYesNo(value: boolean): string {
   return value ? 'yes' : 'no'
 }
 
-export function formatSessionTooltipLine(session: FocusSession): string {
-  return `${session.durationMinutes} min · uninterrupted: ${formatSessionAnswer(!(session.q1Distracted ?? false))} · phone: ${formatSessionAnswer(session.q2UsedPhone ?? false)}`
+export function formatSessionTooltipTitle(sessionNumber: number): string {
+  return `Session ${sessionNumber}`
+}
+
+export function formatSessionTooltipDetail(session: FocusSession): string {
+  return `${session.durationMinutes} min · interrupted: ${formatYesNo(session.distracted ?? false)}`
 }

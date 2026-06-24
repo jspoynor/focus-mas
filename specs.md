@@ -147,11 +147,10 @@ cellOpacity       = 0.20 + 0.80 × uninterruptedRate
 ### 6.4 Session history tooltip
 
 Hovering a past day cell shows:
-- A summary line: *"Longest: [N] min · [X]% uninterrupted"*
-- A list of that day's completed sessions, each with:
-  - Session duration
-  - Q1 answer (distracted: yes/no)
-  - Q2 answer (used phone: yes/no)
+- A summary line: *"[N] session(s) · [X]% uninterrupted"* (e.g. *"3 sessions · 67% uninterrupted"*)
+- A list of that day's survey-complete sessions, oldest first, each numbered to match planner snapshot order:
+  - **Session [N]** (medium weight)
+  - Session duration and interrupted status on the next line: *"[duration] min · interrupted: yes/no"* (`interrupted: yes` when either survey answer was yes)
 
 ### 6.5 Planner snapshot (calendar click)
 

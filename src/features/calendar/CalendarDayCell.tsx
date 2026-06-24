@@ -3,7 +3,9 @@ import { FloatingTooltip } from '../../components/FloatingTooltip'
 import { getCalendarCellFill, TODAY_MARKER_COLOR } from '../../lib/beltColors'
 import {
   formatDaySummaryLine,
-  formatSessionTooltipLine,
+  formatSessionCount,
+  formatSessionTooltipDetail,
+  formatSessionTooltipTitle,
   formatUninterruptedPercent,
   getDayStats,
   toDateKey,
@@ -111,10 +113,13 @@ export function CalendarDayCell({
                 </p>
               ) : null}
               {summaryLine ? <p className="mt-1 text-white/75">{summaryLine}</p> : null}
-              <ul className="mt-1 space-y-1">
-                {stats.sessions.map((session) => (
-                  <li key={session.id} className="text-white/75">
-                    {formatSessionTooltipLine(session)}
+              <ul className="mt-1 space-y-2">
+                {stats.sessions.map((session, index) => (
+                  <li key={session.id}>
+                    <p className="font-medium text-white">
+                      {formatSessionTooltipTitle(index + 1)}
+                    </p>
+                    <p className="text-white/75">{formatSessionTooltipDetail(session)}</p>
                   </li>
                 ))}
               </ul>
@@ -155,5 +160,5 @@ function buildAriaLabel(
 
   const uninterrupted = formatUninterruptedPercent(stats.cleanRate ?? 0)
   const markerSuffix = markers.length > 0 ? `, ${markers.join(', ')}` : ''
-  return `${dateLabel}, ${stats.completedCount} sessions, longest ${stats.longestDurationMinutes} min, ${uninterrupted} uninterrupted${markerSuffix}`
+  return `${dateLabel}, ${formatSessionCount(stats.completedCount)}, ${uninterrupted} uninterrupted${markerSuffix}`
 }
