@@ -791,6 +791,11 @@ body::-webkit-scrollbar-corner,
   pointer-events: none;
 }
 
+.planner-markdown-editor--checkboxes-editable .ProseMirror[contenteditable='false'] ul[data-type='taskList'] li > label input[type='checkbox'] {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
 @media (hover: none), (prefers-reduced-motion: reduce) {
   .glass-panel::before,
   .glass-panel::after,

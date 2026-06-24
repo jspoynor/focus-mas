@@ -1,10 +1,51 @@
 import { useEffect, useRef } from 'react'
 import { toDateKey } from '../lib/calendarGrid'
-import { saveDayPlan } from '../lib/plannerDays'
+import { saveDayPlan, saveFocusSnapshots } from '../lib/plannerDays'
 import { useAppStore } from '../store/useAppStore'
 
 const DAY_PLAN_SAVE_DEBOUNCE_MS = 2_000
 const SAVED_INDICATOR_MS = 2_000
+
+let focusSnapshotDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearFocusSnapshotDebounceTimer() {
+  if (focusSnapshotDebounceTimer) {
+    clearTimeout(focusSnapshotDebounceTimer)
+    focusSnapshotDebounceTimer = null
+  }
+}
+
+async function persistFocusSnapshots(): Promise<void> {
+  const state = useAppStore.getState()
+  if (
+    state.authStatus !== 'signed-in' ||
+    !state.userId ||
+    state.userDataStatus !== 'ready' ||
+    state.plannerViewMode !== 'live'
+  ) {
+    return
+  }
+
+  try {
+    await saveFocusSnapshots(state.userId, state.liveDateKey, state.focusSnapshots)
+  } catch (err) {
+    console.warn('[planner] Focus snapshot save failed:', err)
+  }
+}
+
+/** Debounced write for checkbox edits on today's archived focus sessions. */
+export function queueFocusSnapshotPersist() {
+  clearFocusSnapshotDebounceTimer()
+  focusSnapshotDebounceTimer = setTimeout(() => {
+    focusSnapshotDebounceTimer = null
+    void persistFocusSnapshots()
+  }, DAY_PLAN_SAVE_DEBOUNCE_MS)
+}
+
+async function flushPendingFocusSnapshotSave() {
+  clearFocusSnapshotDebounceTimer()
+  await persistFocusSnapshots()
+}
 
 function msUntilNextLocalMidnight(): number {
   const now = new Date()
@@ -175,6 +216,7 @@ export function usePlannerDayPersistence() {
         if (inFlightSaveRef.current) {
           await inFlightSaveRef.current
         }
+        await flushPendingFocusSnapshotSave()
       }
 
       const latest = useAppStore.getState()
@@ -211,6 +253,7 @@ export function usePlannerDayPersistence() {
       clearDebounceTimer()
       clearSavedIndicatorTimer()
       void flushPendingDayPlanSave()
+      void flushPendingFocusSnapshotSave()
     },
     [],
   )

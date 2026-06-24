@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  canEditFocusSnapshotCheckboxes,
   canFocusGoNext,
   canFocusGoPrev,
   clampFocusPageIndex,
@@ -60,6 +61,14 @@ describe('focus page content', () => {
     expect(isFocusSnapshotPage(0, snapshots.length, 'live')).toBe(true)
     expect(isFocusSnapshotPage(2, snapshots.length, 'live')).toBe(false)
     expect(isFocusDraftPage(2, snapshots.length, 'live')).toBe(true)
+  })
+
+  it('allows checkbox edits on live snapshot pages only', () => {
+    expect(canEditFocusSnapshotCheckboxes(0, snapshots.length, 'live', true, true)).toBe(true)
+    expect(canEditFocusSnapshotCheckboxes(2, snapshots.length, 'live', true, true)).toBe(false)
+    expect(canEditFocusSnapshotCheckboxes(0, snapshots.length, 'snapshot', true, true)).toBe(false)
+    expect(canEditFocusSnapshotCheckboxes(0, snapshots.length, 'live', true, false)).toBe(false)
+    expect(canEditFocusSnapshotCheckboxes(0, 1, 'live', false, true)).toBe(true)
   })
 })
 

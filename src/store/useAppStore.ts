@@ -69,6 +69,7 @@ export interface AppActions {
   }) => void
   recordFocusSessionStart: (snapshot: FocusPlanSnapshot) => void
   recordFocusSessionStop: (sessionId: string) => void
+  updateFocusSnapshotPlanText: (sessionId: string, planText: string) => void
   recordFocusSessionCycleComplete: () => void
   hydrateLivePlannerDay: (plannerDay: PlannerDay) => void
   hydrateSnapshotPlannerDay: (plannerDay: PlannerDay) => void
@@ -172,6 +173,12 @@ export const useAppStore = create<AppStore>((set) => ({
         ),
       }
     }),
+  updateFocusSnapshotPlanText: (sessionId, planText) =>
+    set((state) => ({
+      focusSnapshots: state.focusSnapshots.map((snapshot) =>
+        snapshot.sessionId === sessionId ? { ...snapshot, planText } : snapshot,
+      ),
+    })),
   recordFocusSessionCycleComplete: () =>
     set((state) => {
       const focusDraftSlotVisible = true

@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from 'react'
 import {
+  canEditFocusSnapshotCheckboxes,
   canFocusGoNext,
   canFocusGoPrev,
   FOCUS_SESSION_OUTCOME_LABELS,
@@ -12,6 +13,7 @@ import {
   shouldShowFocusSessionOutcome,
 } from '../../lib/plannerPages'
 import { useFocusPageSync } from '../../hooks/useFocusPageSync'
+import { queueFocusSnapshotPersist } from '../../hooks/usePlannerDayPersistence'
 import { useAppStore } from '../../store/useAppStore'
 import { FloatingTooltip } from '../../components/FloatingTooltip'
 import { PlannerMarkdownEditor, type PlannerMarkdownEditorHandle } from './PlannerMarkdownEditor'
@@ -47,6 +49,7 @@ export function PlannerPanel() {
   const surveyActive = useAppStore((s) => s.surveyActive)
   const setDayPlanDraft = useAppStore((s) => s.setDayPlanDraft)
   const setFocusPlanDraft = useAppStore((s) => s.setFocusPlanDraft)
+  const updateFocusSnapshotPlanText = useAppStore((s) => s.updateFocusSnapshotPlanText)
   const focusGoPrev = useAppStore((s) => s.focusGoPrev)
   const focusGoNext = useAppStore((s) => s.focusGoNext)
 
@@ -99,6 +102,13 @@ export function PlannerPanel() {
   const isFocusReadOnly =
     isFocusSnapshotPage(focusPageIndex, snapshotCount, plannerViewMode, focusDraftSlotVisible) ||
     !isFocusEditable
+  const isFocusCheckboxEditable = canEditFocusSnapshotCheckboxes(
+    focusPageIndex,
+    snapshotCount,
+    plannerViewMode,
+    focusDraftSlotVisible,
+    isPlannerReady,
+  )
   const canPrev = isPlannerReady && canFocusGoPrev(focusPageIndex)
   const canNext =
     isPlannerReady &&
@@ -224,16 +234,26 @@ export function PlannerPanel() {
           </p>
         ) : null}
         <PlannerMarkdownEditor
-          key={`focus-plan-${focusPageIndex}`}
+          key={
+            isOnFocusDraftPage
+              ? `focus-plan-draft-${focusPageIndex}`
+              : `focus-plan-snapshot-${focusPageSnapshot?.sessionId ?? focusPageIndex}`
+          }
           ref={focusEditorRef}
           className={PLANNER_TEXTAREA_CLASS}
           value={focusText}
           onChange={(nextValue) => {
             if (isOnFocusDraftPage) {
               setFocusPlanDraft(nextValue)
+              return
+            }
+            if (isFocusCheckboxEditable && focusPageSnapshot) {
+              updateFocusSnapshotPlanText(focusPageSnapshot.sessionId, nextValue)
+              queueFocusSnapshotPersist()
             }
           }}
           readOnly={isFocusReadOnly}
+          checkboxesEditable={isFocusCheckboxEditable}
           placeholder={focusPlaceholder}
           aria-label="Focus session plan"
         />

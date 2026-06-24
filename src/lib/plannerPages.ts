@@ -66,6 +66,21 @@ export function isFocusDraftPage(
   return pageIndex === snapshotCount
 }
 
+/** Whether task checkboxes on a focus snapshot may be toggled (live today only). */
+export function canEditFocusSnapshotCheckboxes(
+  pageIndex: number,
+  snapshotCount: number,
+  mode: PlannerViewMode,
+  draftSlotVisible = true,
+  isPlannerReady = true,
+): boolean {
+  return (
+    mode === 'live' &&
+    isPlannerReady &&
+    isFocusSnapshotPage(pageIndex, snapshotCount, mode, draftSlotVisible)
+  )
+}
+
 /** Whether the page at `pageIndex` shows an archived focus snapshot (read-only). */
 export function isFocusSnapshotPage(
   pageIndex: number,

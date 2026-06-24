@@ -125,6 +125,21 @@ export async function appendFocusSnapshot(
   )
 }
 
+export async function saveFocusSnapshots(
+  userId: string,
+  dateKey: string,
+  snapshots: FocusPlanSnapshot[],
+): Promise<void> {
+  await setDoc(
+    plannerDayRef(userId, dateKey),
+    {
+      focusSessions: focusSnapshotsToFirestore(snapshots),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  )
+}
+
 export async function removeFocusSnapshot(
   userId: string,
   dateKey: string,
