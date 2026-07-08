@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { defaultUserDataFallback, loadUserData } from '../lib/loadUserData'
+import { reconcileActiveSession } from '../lib/sessionRecovery'
 import { useAppStore } from '../store/useAppStore'
 
 /** Loads progress and sessions when the user signs in. */
@@ -13,6 +14,7 @@ export function useUserData() {
       setProgress,
       setSessions,
       hydrateLivePlannerDay,
+      setRestoredSurvey,
       resetPlannerState,
     } = useAppStore.getState()
 
@@ -28,11 +30,21 @@ export function useUserData() {
     setUserDataStatus('loading')
 
     void loadUserData(userId)
-      .then(({ progress, sessions, plannerDay }) => {
+      .then(async ({ progress, sessions, plannerDay }) => {
+        if (cancelled) return
+        // Reconcile a session left dangling by a window close. Runs only here (on
+        // sign-in load, timer idle) — never on refreshUserData, which would treat an
+        // in-flight session as an orphan.
+        const { plannerDay: reconciledDay, restoredSurvey } = await reconcileActiveSession(
+          userId,
+          plannerDay,
+          sessions,
+        )
         if (cancelled) return
         setProgress(progress)
         setSessions(sessions)
-        hydrateLivePlannerDay(plannerDay)
+        hydrateLivePlannerDay(reconciledDay)
+        setRestoredSurvey(restoredSurvey)
         setUserDataStatus('ready')
       })
       .catch((err) => {
@@ -42,6 +54,7 @@ export function useUserData() {
         setProgress(fallback.progress)
         setSessions(fallback.sessions)
         hydrateLivePlannerDay(fallback.plannerDay)
+        setRestoredSurvey(null)
         setUserDataStatus('ready')
       })
 

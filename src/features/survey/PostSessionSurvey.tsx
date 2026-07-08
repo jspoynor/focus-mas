@@ -1,10 +1,7 @@
 import { useState, type FormEvent } from 'react'
+import type { PendingSurveySession } from '../../types'
 
-export interface PendingSurveySession {
-  sessionId: string
-  durationMinutes: number
-  startedAt: string
-}
+export type { PendingSurveySession }
 
 interface PostSessionSurveyProps {
   session: PendingSurveySession

@@ -8,7 +8,13 @@ import {
   type PlannerViewMode,
 } from '../lib/plannerPages'
 import { applySurveyToSessions, type SessionSurveyUpdate } from '../lib/sessions'
-import type { FocusPlanSnapshot, FocusSession, PlannerDay, UserProgress } from '../types'
+import type {
+  FocusPlanSnapshot,
+  FocusSession,
+  PendingSurveySession,
+  PlannerDay,
+  UserProgress,
+} from '../types'
 
 export type DayPlanSaveStatus = 'idle' | 'pending' | 'saved' | 'error'
 export type TimerMode = 'idle' | 'focus' | 'break'
@@ -44,6 +50,8 @@ export interface AppState {
   surveyActive: boolean
   /** Session awaiting post-session survey answers; null when survey is closed. */
   pendingSurveySessionId: string | null
+  /** Set on reopen when a window closed during the survey; consumed by CenterColumn. */
+  restoredSurvey: PendingSurveySession | null
 }
 
 export interface AppActions {
@@ -69,6 +77,7 @@ export interface AppActions {
     surveyActive: boolean
     pendingSurveySessionId: string | null
   }) => void
+  setRestoredSurvey: (restoredSurvey: PendingSurveySession | null) => void
   recordFocusSessionStart: (snapshot: FocusPlanSnapshot) => void
   recordFocusSessionStop: (sessionId: string) => void
   updateFocusSnapshotPlanText: (sessionId: string, planText: string) => void
@@ -104,6 +113,7 @@ const initialState: AppState = {
   timerMode: 'idle',
   surveyActive: false,
   pendingSurveySessionId: null,
+  restoredSurvey: null,
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -142,6 +152,7 @@ export const useAppStore = create<AppStore>((set) => ({
   setTimerMode: (timerMode) => set({ timerMode }),
   setSurveyState: ({ surveyActive, pendingSurveySessionId }) =>
     set({ surveyActive, pendingSurveySessionId }),
+  setRestoredSurvey: (restoredSurvey) => set({ restoredSurvey }),
   recordFocusSessionStart: (snapshot) =>
     set((state) => {
       const focusSnapshots = [...state.focusSnapshots, snapshot]
@@ -242,6 +253,7 @@ export const useAppStore = create<AppStore>((set) => ({
       timerMode: 'idle',
       surveyActive: false,
       pendingSurveySessionId: null,
+      restoredSurvey: null,
     }),
   applyLiveMidnightRollover: () =>
     set({
