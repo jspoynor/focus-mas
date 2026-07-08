@@ -31,14 +31,16 @@ const FALLBACK_CODES = new Set([
   'auth/popup-blocked',
   'auth/web-storage-unsupported',
   'auth/operation-not-supported-in-this-environment',
-  // The popup opened but silently failed to complete the handshake; Firebase only
-  // reports it once the user closes the stuck window. Fall back rather than loop.
+])
+
+const USER_CANCEL_CODES = new Set([
   'auth/popup-closed-by-user',
   'auth/cancelled-popup-request',
 ])
 
 export function classifyPopupError(code: string): PopupErrorAction {
   if (FALLBACK_CODES.has(code)) return 'fallback'
+  if (USER_CANCEL_CODES.has(code)) return 'user-cancel'
   return 'error'
 }
 

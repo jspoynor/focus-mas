@@ -10,11 +10,9 @@ describe('classifyPopupError', () => {
     )
   })
 
-  it('falls back when the popup opened but never completed (mobile/Opera hang)', () => {
-    // Firebase reports these once the stuck popup is closed; retry via redirect
-    // rather than leaving the user on the sign-in screen.
-    expect(classifyPopupError('auth/popup-closed-by-user')).toBe('fallback')
-    expect(classifyPopupError('auth/cancelled-popup-request')).toBe('fallback')
+  it('treats a user dismissing the popup as a silent cancel, not a retry', () => {
+    expect(classifyPopupError('auth/popup-closed-by-user')).toBe('user-cancel')
+    expect(classifyPopupError('auth/cancelled-popup-request')).toBe('user-cancel')
   })
 
   it('treats genuine failures as errors to surface', () => {
