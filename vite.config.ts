@@ -54,6 +54,11 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,svg,jpg,woff2}'],
         navigateFallback: '/index.html',
+        // Never let the SPA fallback hijack Firebase Auth's reserved paths
+        // (/__/auth/handler, /__/auth/iframe). Otherwise the service worker
+        // serves index.html to the sign-in popup instead of Google's OAuth
+        // handler — which reopens the app's own sign-in screen in the popup.
+        navigateFallbackDenylist: [/^\/__\//],
       },
     }),
   ],

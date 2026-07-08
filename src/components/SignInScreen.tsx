@@ -1,12 +1,19 @@
 import { useState } from 'react'
 import { signInWithGoogle } from '../lib/auth'
+import { useAppStore } from '../store/useAppStore'
 
 export function SignInScreen() {
   const [error, setError] = useState<string | null>(null)
   const [isSigningIn, setIsSigningIn] = useState(false)
+  // Error from a failed redirect that completed on a prior page load.
+  const redirectError = useAppStore((s) => s.signInError)
+  const setSignInError = useAppStore((s) => s.setSignInError)
+
+  const displayedError = error ?? redirectError
 
   async function handleSignIn() {
     setError(null)
+    setSignInError(null)
     setIsSigningIn(true)
 
     const result = await signInWithGoogle()
@@ -29,9 +36,9 @@ export function SignInScreen() {
           longer focus blocks.
         </p>
 
-        {error ? (
+        {displayedError ? (
           <p className="mt-4 text-sm text-red-300" role="alert">
-            {error}
+            {displayedError}
           </p>
         ) : null}
 

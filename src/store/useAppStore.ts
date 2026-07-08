@@ -26,6 +26,8 @@ export interface AppState {
   authStatus: AuthStatus
   userId: string | null
   displayName: string | null
+  /** Sign-in error that must survive a full page reload (e.g. failed redirect result). */
+  signInError: string | null
   userDataStatus: UserDataStatus
   progress: UserProgress | null
   sessions: FocusSession[]
@@ -60,6 +62,7 @@ export interface AppActions {
     userId: string | null
     displayName: string | null
   }) => void
+  setSignInError: (signInError: string | null) => void
   setUserDataStatus: (status: UserDataStatus) => void
   setProgress: (progress: UserProgress | null) => void
   setSessions: (sessions: FocusSession[]) => void
@@ -96,6 +99,7 @@ const initialState: AppState = {
   authStatus: 'unknown',
   userId: null,
   displayName: null,
+  signInError: null,
   userDataStatus: 'idle',
   progress: null,
   sessions: [],
@@ -120,6 +124,7 @@ export const useAppStore = create<AppStore>((set) => ({
   ...initialState,
   setAuth: ({ status, userId, displayName }) =>
     set({ authStatus: status, userId, displayName }),
+  setSignInError: (signInError) => set({ signInError }),
   setUserDataStatus: (userDataStatus) => set({ userDataStatus }),
   setProgress: (progress) => set({ progress }),
   setSessions: (sessions) => set({ sessions }),
