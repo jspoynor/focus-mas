@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   orderBy,
   query,
@@ -134,6 +135,45 @@ export async function loadCompletedSessions(userId: string): Promise<FocusSessio
 
 export function createSessionRef(userId: string): DocumentReference {
   return doc(collection(db, 'users', userId, 'sessions'))
+}
+
+/**
+ * State of a session doc used to reconcile an orphaned focus snapshot on reopen.
+ * - `missing`: window closed mid-focus (doc never written) → cancel the snapshot.
+ * - `incomplete`: window closed while the survey was up → re-show the survey.
+ * - `complete`: fully surveyed already (normal) → leave alone.
+ * - `unknown`: read failed → leave alone (fail safe, never cancel on uncertainty).
+ */
+export type SessionReconcileState =
+  | { kind: 'missing' }
+  | { kind: 'incomplete'; durationMinutes: number }
+  | { kind: 'complete' }
+  | { kind: 'unknown' }
+
+export async function fetchSessionReconcileState(
+  userId: string,
+  sessionId: string,
+): Promise<SessionReconcileState> {
+  try {
+    const snap = await getDoc(doc(db, 'users', userId, 'sessions', sessionId))
+    if (!snap.exists()) return { kind: 'missing' }
+
+    const data = snap.data()
+    if (data.distracted === null || data.distracted === undefined) {
+      const durationMinutes =
+        typeof data.durationMinutes === 'number'
+          ? data.durationMinutes
+          : typeof data.stage === 'number'
+            ? data.stage
+            : 0
+      return { kind: 'incomplete', durationMinutes }
+    }
+
+    return { kind: 'complete' }
+  } catch (err) {
+    console.warn('[sessions] Failed to read reconcile state:', err)
+    return { kind: 'unknown' }
+  }
 }
 
 export async function completeSession(

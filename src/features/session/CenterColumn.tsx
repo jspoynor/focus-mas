@@ -34,7 +34,12 @@ export function CenterColumn() {
   const registerSession = devToolbar?.registerSession
   const timerRef = useRef<TimerDevHandles>(null)
 
-  const [pendingSurvey, setPendingSurvey] = useState<PendingSurveySession | null>(null)
+  // Seed from the reconciliation one-shot: when a window closed while the survey was up,
+  // load restores it here (CenterColumn mounts in the same store batch it's set). See the
+  // mount effect below, which clears the flag.
+  const [pendingSurvey, setPendingSurvey] = useState<PendingSurveySession | null>(
+    () => useAppStore.getState().restoredSurvey,
+  )
   const [surveyExiting, setSurveyExiting] = useState(false)
   const [isSubmittingSurvey, setIsSubmittingSurvey] = useState(false)
   const [breakDurationMinutes, setBreakDurationMinutes] = useState<number | null>(null)
@@ -42,6 +47,14 @@ export function CenterColumn() {
   const handleFocusComplete = useCallback((session: PendingSurveySession) => {
     setPendingSurvey(session)
     setSurveyExiting(false)
+  }, [])
+
+  // Clear the restored-survey one-shot after it has seeded local state, so a later
+  // CenterColumn remount doesn't re-open an already-dismissed survey.
+  useEffect(() => {
+    if (useAppStore.getState().restoredSurvey) {
+      useAppStore.getState().setRestoredSurvey(null)
+    }
   }, [])
 
   const handleSurveySubmit = useCallback(
@@ -170,6 +183,7 @@ export function CenterColumn() {
           ref={timerRef}
           compact={timerCompact}
           completed={surveyVisible}
+          completedDurationMinutes={pendingSurvey?.durationMinutes ?? null}
           onFocusComplete={handleFocusComplete}
           breakDurationMinutes={breakDurationMinutes}
           onBreakStarted={handleBreakStarted}

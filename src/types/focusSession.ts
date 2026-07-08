@@ -11,3 +11,10 @@ export interface FocusSession {
   q2UsedPhone: boolean | null
   distracted: boolean | null
 }
+
+/** A completed focus block awaiting (or resuming) the post-session survey. */
+export interface PendingSurveySession {
+  sessionId: string
+  durationMinutes: number
+  startedAt: string
+}

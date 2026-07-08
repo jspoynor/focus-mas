@@ -20,6 +20,8 @@ export interface TimerDevHandles {
 interface TimerProps {
   compact?: boolean
   completed?: boolean
+  /** Duration to show in the completed-state label; falls back to the live session length. */
+  completedDurationMinutes?: number | null
   onFocusComplete?: (session: PendingSurveySession) => void
   breakDurationMinutes?: number | null
   onBreakStarted?: () => void
@@ -33,6 +35,7 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
   {
     compact = false,
     completed = false,
+    completedDurationMinutes = null,
     onFocusComplete,
     breakDurationMinutes = null,
     onBreakStarted,
@@ -313,7 +316,7 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
       </p>
       <p className="mt-3 text-sm text-white/60">
         {completed
-          ? `${focusDurationMinutes} min focus complete`
+          ? `${completedDurationMinutes ?? focusDurationMinutes} min focus complete`
           : mode === 'idle'
             ? `${stageMinutes} min focus · ${breakMinutes(stageMinutes)} min break`
             : mode === 'focus'
