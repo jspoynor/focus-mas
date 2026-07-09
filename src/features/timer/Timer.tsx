@@ -15,6 +15,15 @@ export interface TimerDevHandles {
   skipBreak: () => void
   getMode: () => TimerMode
   subscribeToModeChange: (listener: () => void) => () => void
+  /**
+   * Re-enter focus for `durationSeconds` more on the same session ("snooze"). The base
+   * session is already banked; this only extends working time and never changes the
+   * logged duration. Valid only while the post-session survey is up (timer idle).
+   */
+  snooze: (
+    durationSeconds: number,
+    session: { sessionId: string; startedAt: string; durationMinutes: number },
+  ) => void
 }
 
 interface TimerProps {
@@ -59,6 +68,8 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
   const tickRef = useRef<number | null>(null)
   const modeRef = useRef<TimerMode>('idle')
   const focusDurationRef = useRef(DEFAULT_STAGE_MINUTES)
+  // True while running a "+5 more minutes" bonus round; the base session is already banked.
+  const snoozeRoundRef = useRef(false)
   const onFocusCompleteRef = useRef(onFocusComplete)
   const onReturnToReadyRef = useRef(onReturnToReady)
   const modeListenersRef = useRef(new Set<() => void>())
@@ -83,6 +94,7 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
       endTimeRef.current = null
       sessionIdRef.current = null
       sessionStartedAtRef.current = null
+      snoozeRoundRef.current = false
       setActiveSessionId(null)
       setMode('idle')
       setRemainingSeconds(0)
@@ -119,7 +131,7 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
     [clearTick],
   )
 
-  const handleFocusComplete = useCallback(() => {
+  const handleFocusComplete = useCallback((options?: { silent?: boolean }) => {
     const sessionId = sessionIdRef.current
     const startedAt = sessionStartedAtRef.current
     const duration = focusDurationRef.current
@@ -131,10 +143,14 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
     sessionStartedAtRef.current = null
     setActiveSessionId(null)
 
-    startSessionCompleteAlert({
-      durationMinutes: duration,
-      desktopNotificationsDesired: readDesktopNotificationsDesired(),
-    })
+    // `silent` skips the completion alert when the user manually ends a bonus round —
+    // they already clicked Stop, so re-arming the beep loop would be noise.
+    if (!options?.silent) {
+      startSessionCompleteAlert({
+        durationMinutes: duration,
+        desktopNotificationsDesired: readDesktopNotificationsDesired(),
+      })
+    }
 
     if (userId && sessionId && startedAt) {
       finishFocusSession(sessionId, duration, startedAtIso)
@@ -212,6 +228,22 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
         if (modeRef.current !== 'break') return
         resetToIdle({ notifyReady: true })
       },
+      snooze: (durationSeconds, session) => {
+        // Only valid straight off a focus completion, while the survey is up (timer idle).
+        if (modeRef.current !== 'idle') return
+
+        snoozeRoundRef.current = true
+        sessionIdRef.current = session.sessionId
+        sessionStartedAtRef.current = new Date(session.startedAt)
+        // Pin the logged duration to the banked stage value so a re-completion re-writes
+        // the same duration (option B: bonus time is never recorded).
+        setFocusDurationMinutes(session.durationMinutes)
+        setActiveSessionId(session.sessionId)
+
+        endTimeRef.current = Date.now() + durationSeconds * 1000
+        setMode('focus')
+        setRemainingSeconds(durationSeconds)
+      },
       getMode: () => modeRef.current,
       subscribeToModeChange: (listener: () => void) => {
         modeListenersRef.current.add(listener)
@@ -220,12 +252,13 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
         }
       },
     }),
-    [handleFocusComplete, resetToIdle],
+    [handleFocusComplete, resetToIdle, setActiveSessionId],
   )
 
   function handleStartFocus() {
     if (!userId || completed) return
 
+    snoozeRoundRef.current = false
     const duration = stageMinutes
     const timerSeconds = shortDurationSeconds ?? duration * 60
     const sessionRef = createSessionRef(userId)
@@ -265,6 +298,15 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
 
   function handleStop() {
     if (modeRef.current === 'focus') {
+      // In a bonus round the base session is already banked — ending early doesn't
+      // discard it, it just finishes the extra time and returns to the survey.
+      if (snoozeRoundRef.current) {
+        endTimeRef.current = null
+        clearTick()
+        handleFocusComplete({ silent: true })
+        return
+      }
+
       const sessionId = sessionIdRef.current
       if (userId && sessionId) {
         const { liveDateKey, plannerViewMode, recordFocusSessionStop } = useAppStore.getState()
@@ -285,6 +327,8 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
   }
 
   const isRunning = mode === 'focus' || mode === 'break'
+  // Hidden during bonus rounds: the base session is already banked, so stopping won't discard it.
+  const showDiscardWarning = isRunning && mode === 'focus' && !snoozeRoundRef.current
   const displaySeconds = completed
     ? 0
     : mode === 'idle'
@@ -349,9 +393,9 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
 
       <p
         className={`mt-4 min-h-[1rem] text-xs text-white/45 ${
-          isRunning && mode === 'focus' ? 'visible' : 'invisible'
+          showDiscardWarning ? 'visible' : 'invisible'
         }`}
-        aria-hidden={!(isRunning && mode === 'focus')}
+        aria-hidden={!showDiscardWarning}
       >
         Stopping early discards this session.
       </p>

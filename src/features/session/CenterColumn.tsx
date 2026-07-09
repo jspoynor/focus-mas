@@ -9,6 +9,7 @@ import { useAppStore } from '../../store/useAppStore'
 
 const SURVEY_EXIT_MS = 500
 const SURVEY_SAVE_TIMEOUT_MS = 15_000
+const SNOOZE_DURATION_MINUTES = 5
 
 function finishSurveyTransition(
   pendingSurvey: PendingSurveySession,
@@ -109,6 +110,24 @@ export function CenterColumn() {
     [pendingSurvey, userId],
   )
 
+  const handleSnooze = useCallback(() => {
+    if (!pendingSurvey) return
+
+    // Respect the dev short-duration toggle so the snooze loop is testable in seconds.
+    const snoozeSeconds = devToolbar?.shortDurationEnabled
+      ? devToolbar.shortDurationSeconds
+      : SNOOZE_DURATION_MINUTES * 60
+
+    timerRef.current?.snooze(snoozeSeconds, {
+      sessionId: pendingSurvey.sessionId,
+      startedAt: pendingSurvey.startedAt,
+      durationMinutes: pendingSurvey.durationMinutes,
+    })
+
+    setPendingSurvey(null)
+    setSurveyExiting(false)
+  }, [devToolbar, pendingSurvey])
+
   const handleBreakStarted = useCallback(() => {
     setBreakDurationMinutes(null)
 
@@ -190,6 +209,18 @@ export function CenterColumn() {
           onReturnToReady={handleReturnToReady}
           shortDurationSeconds={shortDurationSeconds}
         />
+        {pendingSurvey && !surveyExiting ? (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={handleSnooze}
+              disabled={isSubmittingSurvey}
+              className="glass-btn-oval text-sm font-medium text-white/90 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              +5 more minutes
+            </button>
+          </div>
+        ) : null}
         {pendingSurvey ? (
           <PostSessionSurvey
             session={pendingSurvey}
