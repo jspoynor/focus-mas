@@ -1,12 +1,12 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { breakMinutes } from '../../lib/breakDuration'
-import { formatCountdown } from '../../lib/formatCountdown'
 import { appendFocusSnapshot, removeFocusSnapshot } from '../../lib/plannerDays'
 import { startSessionCompleteAlert } from '../../lib/sessionAlerts'
 import { readDesktopNotificationsDesired } from '../../lib/sessionNotificationsPreference'
 import { completeSession, createSessionRef } from '../../lib/sessions'
 import { useAppStore, type TimerMode } from '../../store/useAppStore'
 import type { PendingSurveySession } from '../survey/PostSessionSurvey'
+import { TimerDisplay, type TimerAction } from './TimerDisplay'
 
 const DEFAULT_STAGE_MINUTES = 25
 
@@ -343,62 +343,32 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
         ? 'Break'
         : 'Ready'
 
+  const subLabel = completed
+    ? `${completedDurationMinutes ?? focusDurationMinutes} min focus complete`
+    : mode === 'idle'
+      ? `${stageMinutes} min focus · ${breakMinutes(stageMinutes)} min break`
+      : mode === 'focus'
+        ? `${focusDurationMinutes} min focus`
+        : `${breakMinutes(focusDurationMinutes)} min break`
+
+  const action: TimerAction | null = completed
+    ? null
+    : mode === 'idle'
+      ? { label: 'Start focus', onClick: handleStartFocus, disabled: !userId }
+      : {
+          label: mode === 'focus' ? 'Stop session' : 'Skip break',
+          onClick: handleStop,
+          muted: true,
+        }
+
   return (
-    <section
-      className={`w-full min-w-0 text-center transition-all duration-500 ease-out ${compact ? 'py-2' : 'py-4'}`}
-      aria-label="Focus timer"
-    >
-      <p className="text-xs uppercase tracking-widest text-white/50">{modeLabel}</p>
-      <p
-        className={`timer-display mt-4 w-full max-w-full overflow-hidden font-bold tabular-nums tracking-tight text-white transition-all duration-500 ease-out ${
-          compact ? 'timer-display--compact' : ''
-        }`}
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {completed ? formatCountdown(0) : formatCountdown(displaySeconds)}
-      </p>
-      <p className="mt-3 text-sm text-white/60">
-        {completed
-          ? `${completedDurationMinutes ?? focusDurationMinutes} min focus complete`
-          : mode === 'idle'
-            ? `${stageMinutes} min focus · ${breakMinutes(stageMinutes)} min break`
-            : mode === 'focus'
-              ? `${focusDurationMinutes} min focus`
-              : `${breakMinutes(focusDurationMinutes)} min break`}
-      </p>
-
-      {!completed ? (
-        <div className="mt-8 flex justify-center gap-3">
-          {mode === 'idle' ? (
-            <button
-              type="button"
-              onClick={handleStartFocus}
-              disabled={!userId}
-              className="glass-btn-oval text-sm font-medium text-white"
-            >
-              Start focus
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleStop}
-              className="glass-btn-oval text-sm font-medium text-white/90"
-            >
-              {mode === 'focus' ? 'Stop session' : 'Skip break'}
-            </button>
-          )}
-        </div>
-      ) : null}
-
-      <p
-        className={`mt-4 min-h-[1rem] text-xs text-white/45 ${
-          showDiscardWarning ? 'visible' : 'invisible'
-        }`}
-        aria-hidden={!showDiscardWarning}
-      >
-        Stopping early discards this session.
-      </p>
-    </section>
+    <TimerDisplay
+      compact={compact}
+      modeLabel={modeLabel}
+      displaySeconds={displaySeconds}
+      subLabel={subLabel}
+      action={action}
+      showDiscardWarning={showDiscardWarning}
+    />
   )
 })

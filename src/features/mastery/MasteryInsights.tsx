@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { HoverTooltipSection } from '../../components/HoverTooltipSection'
+import { CrownIcon } from '../../components/CrownIcon'
 import {
   computeCurrentStreak,
   isAtMaxStage,
@@ -13,16 +14,31 @@ export function MasteryStage() {
   const progress = useAppStore((s) => s.progress)
   const stageMinutes = progress?.currentStageMinutes ?? 25
   const stageColor = getStageColor(stageMinutes)
+  const isMaxStage = stageMinutes === 90
 
   return (
     <HoverTooltipSection className="shrink-0 outline-none" tooltip={<FocusLevelTooltipContent />}>
       <p className="text-[10px] uppercase tracking-widest text-white/40">Focus level</p>
-      <p
-        className="text-xl font-light transition-colors duration-500"
-        style={{ color: stageColor }}
-      >
-        {stageMinutes} min
-      </p>
+      <div className="flex items-center gap-2">
+        <div
+          className="relative aspect-square h-5 shrink-0 rounded-sm"
+          style={{
+            backgroundColor: stageColor,
+            boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.1)',
+          }}
+        >
+          {isMaxStage && (
+            <div className="absolute inset-0 flex items-center justify-center text-white pointer-events-none">
+              <div className="h-4 w-4">
+                <CrownIcon opacity={0.15} />
+              </div>
+            </div>
+          )}
+        </div>
+        <p className="text-xl font-light text-white">
+          {stageMinutes} min
+        </p>
+      </div>
     </HoverTooltipSection>
   )
 }

@@ -150,7 +150,7 @@ body::-webkit-scrollbar-corner,
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: rgba(2, 6, 23, 0.32);
+  background: var(--app-scrim, rgba(2, 6, 23, 0.32));
   pointer-events: none;
 }
 
@@ -158,6 +158,41 @@ body::-webkit-scrollbar-corner,
 .app-shell > main {
   position: relative;
   z-index: 1;
+}
+
+/*
+ * Marketing page: its own scroll container nested inside the #root overflow lock, so the
+ * app's viewport lock never has to be relaxed. The fixed .app-shell wallpaper layers sit
+ * outside this container and parallax behind it.
+ */
+.marketing-shell {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  /*
+   * The app's scrim is tuned for text inside glass panels. Marketing copy sits directly on
+   * the wallpaper, so it needs a heavier one to stay readable over a busy photograph.
+   */
+  --app-scrim: rgba(2, 6, 23, 0.66);
+}
+
+/*
+ * Static diagonal sheen for the hero panel, painted as the element's own background image
+ * rather than via `.glass-shine`'s ::before. The ::before is dropped (content: none) while
+ * scrolling for performance (html.cursor-light-suppressed) and under reduced-motion, which
+ * made the sheen flicker away on scroll. An element background survives all of that.
+ */
+.marketing-hero-panel {
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.34) 0%,
+    rgba(255, 255, 255, 0.08) 18%,
+    transparent 42%,
+    transparent 58%,
+    rgba(255, 255, 255, 0.06) 82%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
 }
 
 /* App header — three columns on wide landscape; two rows when timer stacks above panels */
