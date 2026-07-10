@@ -1,3 +1,8 @@
+---
+name: liquidglass-tailwind
+description: Apply Apple's Liquid Glass design language using native Tailwind CSS utilities rather than hand-written CSS. Use when building or restyling glassmorphism cards, buttons, navbars, modals, or sheets in a Tailwind project, when applying frosted glass, refraction, or specular highlights with utility classes, or when the request mentions liquid glass, glass design, iOS 26 style, or glassmorphism. In this repo the liquidglass-tailwind plugin is loaded in src/index.css, so prefer its utilities (rounded-glass, rounded-glass-lg) over bespoke CSS. Applies to all of src/, especially src/marketing/.
+---
+
 # Liquid Glass Design — Tailwind CSS
 
 Apply Apple's iOS 26 Liquid Glass design language to web projects using native Tailwind CSS.

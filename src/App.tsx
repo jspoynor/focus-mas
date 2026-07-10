@@ -4,7 +4,7 @@ import { CursorLight } from './components/CursorLight'
 import { AuthLoadingScreen } from './components/AuthLoadingScreen'
 import { DataLoadingSkeleton } from './components/DataLoadingSkeleton'
 import { LeftPanel } from './components/LeftPanel'
-import { SignInScreen } from './components/SignInScreen'
+import { MarketingPage } from './marketing/MarketingPage'
 import { DevAdminShell } from './dev/DevAdminShell'
 import { DevToolbarBundle } from './dev/DevToolbarBundle'
 import { DevToolsDisabledHint } from './dev/DevToolsDisabledHint'
@@ -49,7 +49,7 @@ function MainApp() {
       {authStatus === 'unknown' ? (
         <AuthLoadingScreen />
       ) : authStatus === 'signed-out' ? (
-        <SignInScreen />
+        <MarketingPage />
       ) : (
         <MainShell onCycleWallpaper={cycle} />
       )}

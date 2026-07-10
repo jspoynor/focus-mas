@@ -1,6 +1,6 @@
 ---
-name: liquid-glass-design
-description: Design and implement liquid-glass style interfaces for websites, dashboards, web apps, and design systems. Use when Codex needs to analyze an existing "glass" UI, redesign a generic glassmorphism layout into a more credible liquid-glass system, or build reusable tokens and component patterns for translucent surfaces, blurred backdrops, highlights, gradients, and motion. Especially useful when the request mentions liquid glass, frosted glass, glassmorphism, Apple-style glass, translucent UI, backdrop blur, premium dashboard polish, or when the current effect is only semi-transparent cards and needs a more intentional visual system.
+name: liquid-glass-css-skill
+description: Design and implement liquid-glass style interfaces — translucent surfaces, blurred backdrops, specular highlights, gradients, and motion. Use when analyzing an existing "glass" UI, redesigning generic glassmorphism into a more credible liquid-glass system, or building reusable tokens and component patterns. Triggers on liquid glass, frosted glass, glassmorphism, Apple-style glass, translucent UI, backdrop blur, or when an effect is only semi-transparent cards and needs a more intentional visual system. In this repo, use it for any work on the glass surface classes in src/index.css (.glass-panel, .glass-card, .glass-btn, .glass-surface) and for every edit under src/marketing/.
 ---
 
 # Liquid Glass Design
