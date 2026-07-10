@@ -13,7 +13,8 @@ export const BELT_HEX = [
   '#5C6BC0', // 70 min
   '#AB47BC', // 75 min
   '#8D5524', // 80 min
-  '#2C1503', // 85–90 min — espresso
+  '#2C1503', // 85 min — espresso
+  '#1A1A1A', // 90 min — charcoal
 ] as const
 
 /** Today marker outline on the contribution calendar. */

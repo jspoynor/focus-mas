@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type FocusEvent } from 'react'
 import { FloatingTooltip } from '../../components/FloatingTooltip'
+import { CrownIcon } from '../../components/CrownIcon'
 import { getCalendarCellFill, TODAY_MARKER_COLOR } from '../../lib/beltColors'
 import {
   formatDaySummaryLine,
@@ -37,6 +38,7 @@ export function CalendarDayCell({
     stats.longestDurationMinutes !== null && stats.cleanRate !== null
       ? getCalendarCellFill(stats.longestDurationMinutes, stats.cleanRate)
       : undefined
+  const isMaxStage = stats.longestDurationMinutes === 90
   const isFocusable = hasSessions || isToday || isPlannerClickable
   const dateKey = toDateKey(date)
   const summaryLine = formatDaySummaryLine(stats)
@@ -91,6 +93,14 @@ export function CalendarDayCell({
         />
       ) : (
         <div className={cellSurfaceClassName} style={cellStyle} aria-hidden="true" />
+      )}
+
+      {isMaxStage && (
+        <div className="absolute inset-0 flex items-center justify-center text-white pointer-events-none">
+          <div className="w-4 h-4">
+            <CrownIcon opacity={0.15} />
+          </div>
+        </div>
       )}
 
       {hasTooltipContent ? (
