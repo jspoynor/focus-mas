@@ -203,24 +203,22 @@ export function CenterColumn() {
           compact={timerCompact}
           completed={surveyVisible}
           completedDurationMinutes={pendingSurvey?.durationMinutes ?? null}
+          completedAction={
+            pendingSurvey && !surveyExiting
+              ? {
+                  label: '+5 more minutes',
+                  onClick: handleSnooze,
+                  disabled: isSubmittingSurvey,
+                  muted: true,
+                }
+              : null
+          }
           onFocusComplete={handleFocusComplete}
           breakDurationMinutes={breakDurationMinutes}
           onBreakStarted={handleBreakStarted}
           onReturnToReady={handleReturnToReady}
           shortDurationSeconds={shortDurationSeconds}
         />
-        {pendingSurvey && !surveyExiting ? (
-          <div className="flex justify-center">
-            <button
-              type="button"
-              onClick={handleSnooze}
-              disabled={isSubmittingSurvey}
-              className="glass-btn-oval text-sm font-medium text-white/90 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              +5 more minutes
-            </button>
-          </div>
-        ) : null}
         {pendingSurvey ? (
           <PostSessionSurvey
             session={pendingSurvey}
