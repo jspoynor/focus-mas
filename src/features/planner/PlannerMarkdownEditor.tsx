@@ -1,19 +1,7 @@
-import Document from '@tiptap/extension-document'
-import {
-  BulletList,
-  ListItem,
-  ListKeymap,
-  OrderedList,
-  TaskItem,
-  TaskList,
-} from '@tiptap/extension-list'
-import Paragraph from '@tiptap/extension-paragraph'
-import Placeholder from '@tiptap/extension-placeholder'
-import Text from '@tiptap/extension-text'
-import { Markdown } from '@tiptap/markdown'
-import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { EditorContent, useEditor } from '@tiptap/react'
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
+
+import { createPlannerExtensions } from './plannerEditorExtensions'
 
 export interface PlannerMarkdownEditorProps {
   className?: string
@@ -28,64 +16,6 @@ export interface PlannerMarkdownEditorProps {
 
 export interface PlannerMarkdownEditorHandle {
   commit: () => void
-}
-
-function toggleReadOnlyTaskItem(
-  node: ProseMirrorNode,
-  checked: boolean,
-  getEditor: () => ReturnType<typeof useEditor> | null,
-): boolean {
-  const activeEditor = getEditor()
-  if (!activeEditor || activeEditor.isDestroyed) {
-    return false
-  }
-
-  let updated = false
-  activeEditor.state.doc.descendants((subnode, pos) => {
-    if (updated || subnode.type.name !== 'taskItem') {
-      return
-    }
-    if (subnode.textContent === node.textContent && subnode.attrs.checked !== checked) {
-      const tr = activeEditor.state.tr.setNodeMarkup(pos, undefined, {
-        ...subnode.attrs,
-        checked,
-      })
-      activeEditor.view.dispatch(tr)
-      updated = true
-    }
-  })
-
-  return updated
-}
-
-function createPlannerExtensions(
-  placeholder: string,
-  getEditor: () => ReturnType<typeof useEditor> | null,
-  getCheckboxesEditable: () => boolean,
-) {
-  return [
-    Document,
-    Paragraph,
-    Text,
-    BulletList,
-    OrderedList,
-    ListItem,
-    TaskList,
-    TaskItem.configure({
-      nested: true,
-      onReadOnlyChecked: (node, checked) => {
-        if (!getCheckboxesEditable()) {
-          return false
-        }
-        return toggleReadOnlyTaskItem(node, checked, getEditor)
-      },
-    }),
-    ListKeymap,
-    Placeholder.configure({ placeholder }),
-    Markdown.configure({
-      markedOptions: { gfm: true },
-    }),
-  ]
 }
 
 export const PlannerMarkdownEditor = forwardRef<
