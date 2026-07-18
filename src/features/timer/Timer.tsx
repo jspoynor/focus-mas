@@ -31,6 +31,8 @@ interface TimerProps {
   completed?: boolean
   /** Duration to show in the completed-state label; falls back to the live session length. */
   completedDurationMinutes?: number | null
+  /** Action rendered in the completed state (e.g. the snooze button while the survey is up). */
+  completedAction?: TimerAction | null
   onFocusComplete?: (session: PendingSurveySession) => void
   breakDurationMinutes?: number | null
   onBreakStarted?: () => void
@@ -45,6 +47,7 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
     compact = false,
     completed = false,
     completedDurationMinutes = null,
+    completedAction = null,
     onFocusComplete,
     breakDurationMinutes = null,
     onBreakStarted,
@@ -70,6 +73,8 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
   const focusDurationRef = useRef(DEFAULT_STAGE_MINUTES)
   // True while running a "+5 more minutes" bonus round; the base session is already banked.
   const snoozeRoundRef = useRef(false)
+  // Length of the current bonus round, for its sub-label (dev mode can make it seconds).
+  const snoozeSecondsRef = useRef(0)
   const onFocusCompleteRef = useRef(onFocusComplete)
   const onReturnToReadyRef = useRef(onReturnToReady)
   const modeListenersRef = useRef(new Set<() => void>())
@@ -233,6 +238,7 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
         if (modeRef.current !== 'idle') return
 
         snoozeRoundRef.current = true
+        snoozeSecondsRef.current = durationSeconds
         sessionIdRef.current = session.sessionId
         sessionStartedAtRef.current = new Date(session.startedAt)
         // Pin the logged duration to the banked stage value so a re-completion re-writes
@@ -343,20 +349,28 @@ export const Timer = forwardRef<TimerDevHandles, TimerProps>(function Timer(
         ? 'Break'
         : 'Ready'
 
+  const isSnoozeRound = mode === 'focus' && snoozeRoundRef.current
+  const snoozeSeconds = snoozeSecondsRef.current
+  const snoozeLengthLabel =
+    snoozeSeconds % 60 === 0 ? `${snoozeSeconds / 60} bonus min` : `${snoozeSeconds} bonus sec`
+
   const subLabel = completed
     ? `${completedDurationMinutes ?? focusDurationMinutes} min focus complete`
     : mode === 'idle'
       ? `${stageMinutes} min focus · ${breakMinutes(stageMinutes)} min break`
       : mode === 'focus'
-        ? `${focusDurationMinutes} min focus`
+        ? isSnoozeRound
+          ? `+${snoozeLengthLabel} · session saved`
+          : `${focusDurationMinutes} min focus`
         : `${breakMinutes(focusDurationMinutes)} min break`
 
   const action: TimerAction | null = completed
-    ? null
+    ? completedAction
     : mode === 'idle'
       ? { label: 'Start focus', onClick: handleStartFocus, disabled: !userId }
       : {
-          label: mode === 'focus' ? 'Stop session' : 'Skip break',
+          label:
+            mode === 'focus' ? (isSnoozeRound ? 'Start survey' : 'Stop session') : 'Skip break',
           onClick: handleStop,
           muted: true,
         }

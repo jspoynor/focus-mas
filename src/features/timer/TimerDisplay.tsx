@@ -50,26 +50,30 @@ export function TimerDisplay({
       <p className="mt-3 text-sm text-white/60">{subLabel}</p>
 
       {action ? (
-        <div className="mt-8 flex justify-center gap-3">
+        <div className={`${compact ? 'mt-6' : 'mt-8'} flex justify-center gap-3`}>
           <button
             type="button"
             onClick={action.onClick}
             disabled={action.disabled}
-            className={`glass-btn-oval text-sm font-medium ${action.muted ? 'text-white/90' : 'text-white'}`}
+            className={`glass-btn-oval text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40 ${action.muted ? 'text-white/90' : 'text-white'}`}
           >
             {action.label}
           </button>
         </div>
       ) : null}
 
-      <p
-        className={`mt-4 min-h-[1rem] text-xs text-white/45 ${
-          showDiscardWarning ? 'visible' : 'invisible'
-        }`}
-        aria-hidden={!showDiscardWarning}
-      >
-        Stopping early discards this session.
-      </p>
+      {/* Compact + action is the survey state, where the warning can never show — dropping
+          the placeholder keeps the survey card from being pushed down. */}
+      {compact && action ? null : (
+        <p
+          className={`mt-4 min-h-[1rem] text-xs text-white/45 ${
+            showDiscardWarning ? 'visible' : 'invisible'
+          }`}
+          aria-hidden={!showDiscardWarning}
+        >
+          Stopping early discards this session.
+        </p>
+      )}
     </section>
   )
 }
